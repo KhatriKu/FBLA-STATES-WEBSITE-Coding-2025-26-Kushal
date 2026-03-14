@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Claim an Item - Lost But Found</title>
+    <link rel="icon" type="image/png" href="/images/Favicon.png">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="nav-bar" class="transparent">
+    <div class="nav-left">
+        <a href="/" class="nav-logo">
+            <img src="/images/Home-logo.png" alt="Lost But Found" width="48" height="48">
+        </a>
+        <a href="/uploadItem">Submit Item</a>
+        <a href="/browse">Browse Items</a>
+        <a href="/claim">Claim Item</a>
+    </div>
+    <div class="nav-right">
+        <a href="/account" class="nav-auth">My Account</a>
+        <a href="/register" class="nav-auth">Register</a>
+        <a href="/login" class="nav-auth">Login</a>
+        <a href="/admin/login" class="nav-auth">Admin</a>
+    </div>
+    <button class="hamburger-menu" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="/">Home</a>
+    <a href="/uploadItem">Submit Item</a>
+    <a href="/browse">Browse Items</a>
+    <a href="/claim">Claim Item</a>
+    <a href="/account" class="nav-auth">My Account</a>
+    <a href="/register" class="nav-auth">Register</a>
+    <a href="/login" class="nav-auth">Login</a>
+    <a href="/admin/login" class="nav-auth">Admin</a>
+</div>
+
+
+    <!-- Page Header Section -->
+    <section class="section" style="padding-top: 100px;">
+        <div class="container">
+            <h1 style="text-align: center; margin-bottom: 20px;">Claim or Inquire About an Item</h1>
+            <p style="text-align: center; color: #666; font-size: 1.1em; margin-bottom: 40px;">
+                Found your lost item? Fill out this form to claim it or request more information.
+            </p>
+
+            <div id="statusMessage" class="status-message"></div>
+
+            <!-- Two Column Layout -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px;">
+
+                <!-- Left Column: Available Items -->
+                <div>
+                    <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; border-left: 4px solid #0066cc;">
+                        <h2 style="margin-bottom: 20px; border-bottom: 2px solid #0066cc; padding-bottom: 10px;">
+                            Available Items
+                        </h2>
+
+                        <div class="form-group">
+                            <label for="searchItems">Search Items:</label>
+                            <input type="text" id="searchItems" placeholder="Search by name, category, or location...">
+                        </div>
+
+                        <div id="itemsList" style="max-height: 500px; overflow-y: auto;">
+                            <!-- Items will be loaded here dynamically -->
+                            <div style="text-align: center; padding: 40px; color: #999;">
+                                Loading items...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Claim Form -->
+                <div>
+                    <div style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h2 style="margin-bottom: 20px; border-bottom: 2px solid #0066cc; padding-bottom: 10px;">
+                             Claim/Inquiry Form
+                        </h2>
+
+                        <form id="claimForm">
+                            <input type="hidden" id="selectedItemId" name="itemId">
+
+                            <div class="form-group">
+                                <label>Selected Item:</label>
+                                <div id="selectedItemDisplay" style="padding: 15px; background: #f8f9fa; border-radius: 5px; min-height: 50px; border: 2px dashed #ddd;">
+                                    <em style="color: #999;">Click on an item from the list to select it</em>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="inquiryType">Type of Request: *</label>
+                                <select id="inquiryType" name="inquiryType" required>
+                                    <option value="">Select request type...</option>
+                                    <option value="claim">I want to claim this item</option>
+                                    <option value="inquiry">I need more information</option>
+                                    <option value="verification">I think this might be mine</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="claimantName">Your Full Name: *</label>
+                                <input type="text" id="claimantName" name="claimantName" required
+                                       placeholder="Enter your full name">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="claimantEmail">Your Email: *</label>
+                                <input type="email" id="claimantEmail" name="claimantEmail" required
+                                       placeholder="your.email@example.com">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="claimantPhone">Your Phone Number: *</label>
+                                <input type="tel" id="claimantPhone" name="claimantPhone" required
+                                       placeholder="(123) 456-7890">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="studentId">Student ID (if applicable):</label>
+                                <input type="text" id="studentId" name="studentId"
+                                       placeholder="Your student ID number">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="claimDescription">Describe the item / Explain your claim: *</label>
+                                <textarea id="claimDescription" name="claimDescription" rows="5" required
+                                          placeholder="Please provide details about the item that prove it's yours (color, brand, unique features, where you lost it, etc.)"></textarea>
+                                <small class="file-info">Be as specific as possible to help verify ownership</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="additionalInfo">Additional Information:</label>
+                                <textarea id="additionalInfo" name="additionalInfo" rows="3"
+                                          placeholder="Any other details you'd like to share..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="agreeTerms" required>
+                                    I certify that the information provided is accurate and true. *
+                                </label>
+                            </div>
+
+                            <div class="form-actions" style="justify-content: center;">
+                                <button type="submit" class="btn btn-success" id="submitBtn">
+                                     Submit Claim/Inquiry
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="resetBtn">
+                                     Reset Form
+                                </button>
+                            </div>
+
+                            <div id="loadingIndicator" class="loading-indicator">
+                                <p>Submitting your request... Please wait</p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Section -->
+            <div class="form-requirements">
+                <h3>How the Claim Process Works</h3>
+                <ul>
+                    <li><strong>Step 1:</strong> Browse available items in the list on the left</li>
+                    <li><strong>Step 2:</strong> Click on the item you want to claim or inquire about</li>
+                    <li><strong>Step 3:</strong> Fill out the form with your contact information and description</li>
+                    <li><strong>Step 4:</strong> Submit your claim - an admin will review it</li>
+                    <li><strong>Step 5:</strong> You'll be contacted via email/phone for verification and pickup</li>
+                </ul>
+                <p style="margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
+                    <strong>Important:</strong> Be prepared to provide proof of ownership (receipts, photos, unique identifying features)
+                    when claiming an item. False claims will be reported.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="background: #333; color: white; padding: 40px 20px; text-align: center;">
+        <div class="container">
+            <p>&copy; 2025 FBLA Lost But Found Project. All rights reserved.</p>
+            <p style="margin-top: 10px; opacity: 0.8;">Claim Your Lost Items</p>
+        </div>
+    </footer>
+
+    <script>
+    let allItems = [];
+    let selectedItem = null;
+
+    // Load available items
+    async function loadItems() {
+        try {
+            // FIXED: Use /api/items instead of /api/admin/data
+            const response = await fetch('/api/items');
+            const data = await response.json();
+
+            if (data.success) {
+                // Filter to only show items that are NOT claimed
+                allItems = data.items.filter(item => item.status !== 'claimed');
+                displayItems(allItems);
+            } else {
+                document.getElementById('itemsList').innerHTML =
+                    '<div style="text-align: center; padding: 20px; color: #dc3545;">Failed to load items</div>';
+            }
+        } catch (error) {
+            console.error('Error loading items:', error);
+            document.getElementById('itemsList').innerHTML =
+                '<div style="text-align: center; padding: 20px; color: #dc3545;">Network error loading items</div>';
+        }
+    }
+
+    function displayItems(items) {
+        const container = document.getElementById('itemsList');
+
+        if (items.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No active items available for claiming</div>';
+            return;
+        }
+
+        container.innerHTML = items.map(item => `
+            <div class="item-select-card" data-item-id="${item.id}" onclick="selectItem(${item.id})"
+                 style="padding: 15px; margin-bottom: 15px; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">
+                <div style="display: flex; gap: 15px; align-items: start;">
+                    <div style="flex-shrink: 0;">
+                        ${item.image ?
+                            `<img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 5px;">` :
+                            `<div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.8em; color: #999;">No Image</div>`
+                        }
+                    </div>
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 5px 0; font-size: 1.1em; color: #333;">${item.name}</h3>
+                        <p style="margin: 3px 0; font-size: 0.9em; color: #0066cc; font-weight: 600;">
+                            ${item.category || 'Uncategorized'}
+                        </p>
+                        <p style="margin: 3px 0; font-size: 0.85em; color: #666;">
+                            LOCATION FOUND:  ${item.location || 'Location not specified'}
+                        </p>
+                        <p style="margin: 3px 0; font-size: 0.85em; color: #666;">
+                            DATE FOUND: ${new Date(item.dateFound).toLocaleDateString()}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        // Add hover effect
+        document.querySelectorAll('.item-select-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.borderColor = '#0066cc';
+                this.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.2)';
+                this.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', function() {
+                if (!this.classList.contains('selected')) {
+                    this.style.borderColor = '#e0e0e0';
+                    this.style.boxShadow = 'none';
+                    this.style.transform = 'translateY(0)';
+                }
+            });
+        });
+    }
+
+    function selectItem(itemId) {
+        selectedItem = allItems.find(item => item.id === itemId);
+
+        if (!selectedItem) return;
+
+        // Update hidden input
+        document.getElementById('selectedItemId').value = itemId;
+
+        // Update selected display
+        document.getElementById('selectedItemDisplay').innerHTML = `
+            <div style="display: flex; gap: 10px; align-items: center;">
+                ${selectedItem.image ?
+                    `<img src="${selectedItem.image}" alt="${selectedItem.name}"
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px;">` :
+                    ''
+                }
+                <div>
+                    <strong style="color: #0066cc;">${selectedItem.name}</strong><br>
+                    <small style="color: #666;">${selectedItem.category || 'Uncategorized'} • ${selectedItem.location || 'Unknown location'}</small>
+                </div>
+            </div>
+        `;
+
+        // Update visual selection
+        document.querySelectorAll('.item-select-card').forEach(card => {
+            if (card.dataset.itemId == itemId) {
+                card.classList.add('selected');
+                card.style.borderColor = '#0066cc';
+                card.style.backgroundColor = '#f8f9ff';
+                card.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+            } else {
+                card.classList.remove('selected');
+                card.style.borderColor = '#e0e0e0';
+                card.style.backgroundColor = 'white';
+                card.style.boxShadow = 'none';
+            }
+        });
+
+        showMessage('Item selected! Fill out the form below.', 'success');
+    }
+
+    // Search functionality
+    document.getElementById('searchItems').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const filtered = allItems.filter(item =>
+            item.name.toLowerCase().includes(searchTerm) ||
+            (item.category && item.category.toLowerCase().includes(searchTerm)) ||
+            (item.location && item.location.toLowerCase().includes(searchTerm))
+        );
+        displayItems(filtered);
+    });
+
+    // Form submission
+    document.getElementById('claimForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        if (!selectedItem) {
+            showMessage('Please select an item from the list first', 'error');
+            return;
+        }
+
+        if (!document.getElementById('agreeTerms').checked) {
+            showMessage('Please agree to the terms', 'error');
+            return;
+        }
+
+        showLoading(true);
+
+        const claimData = {
+            itemId: parseInt(document.getElementById('selectedItemId').value),
+            claimantName: document.getElementById('claimantName').value.trim(),
+            claimantContact: document.getElementById('claimantPhone').value.trim(),
+            claimantEmail: document.getElementById('claimantEmail').value.trim(),
+            claimDescription: `[${document.getElementById('inquiryType').value.toUpperCase()}] ${document.getElementById('claimDescription').value.trim()}`,
+            studentId: document.getElementById('studentId').value.trim(),
+            additionalInfo: document.getElementById('additionalInfo').value.trim()
+        };
+
+        try {
+            const response = await fetch('/api/claims', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(claimData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage(`Claim submitted successfully! Claim ID: #CL${String(data.claimId).padStart(3, '0')}. You will be contacted soon.`, 'success');
+                document.getElementById('claimForm').reset();
+                document.getElementById('selectedItemDisplay').innerHTML = '<em style="color: #999;">Click on an item from the list to select it</em>';
+                selectedItem = null;
+                document.querySelectorAll('.item-select-card').forEach(card => {
+                    card.classList.remove('selected');
+                    card.style.borderColor = '#e0e0e0';
+                    card.style.backgroundColor = 'white';
+                    card.style.boxShadow = 'none';
+                });
+                loadItems(); // Reload to update status
+            } else {
+                showMessage(`Error: ${data.error}`, 'error');
+            }
+        } catch (error) {
+            console.error('Claim submission error:', error);
+            showMessage('Network error submitting claim', 'error');
+        } finally {
+            showLoading(false);
+        }
+    });
+
+    // Reset button
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        document.getElementById('claimForm').reset();
+        document.getElementById('selectedItemDisplay').innerHTML = '<em style="color: #999;">Click on an item from the list to select it</em>';
+        selectedItem = null;
+        document.querySelectorAll('.item-select-card').forEach(card => {
+            card.classList.remove('selected');
+            card.style.borderColor = '#e0e0e0';
+            card.style.backgroundColor = 'white';
+            card.style.boxShadow = 'none';
+        });
+    });
+
+    function showMessage(message, type) {
+        const statusDiv = document.getElementById('statusMessage');
+        statusDiv.textContent = message;
+        statusDiv.className = `status-message status-${type}`;
+        statusDiv.style.display = 'block';
+        setTimeout(() => { statusDiv.style.display = 'none'; }, 7000);
+    }
+
+    function showLoading(show) {
+        document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+        document.getElementById('submitBtn').disabled = show;
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        loadItems();
+    });
+
+    // Auth wall — redirect to login if not logged in
+    (function() {
+        const t = localStorage.getItem('userToken');
+        if (!t) { window.location.href = '/login?next=/claim'; return; }
+        try {
+            const p = JSON.parse(atob(t.split('.')[1]));
+            if (p.exp && Date.now() / 1000 > p.exp) {
+                localStorage.removeItem('userToken');
+                window.location.href = '/login?next=/claim';
+                return;
+            }
+            // Auto-fill claimant fields from token
+            if (p.name)  { const el = document.getElementById('claimantName');  if (el) el.value = p.name; }
+            if (p.email) { const el = document.getElementById('claimantEmail'); if (el) el.value = p.email; }
+        } catch(e) {
+            localStorage.removeItem('userToken');
+            window.location.href = '/login?next=/claim';
+        }
+    })();
+
+</script>
+    <script>
+        window.addEventListener('scroll', () => {
+            document.getElementById('nav-bar').classList.toggle('transparent', window.scrollY <= 50);
+        });
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const mobileMenu   = document.getElementById('mobileMenu');
+        if (hamburgerBtn) {
+            hamburgerBtn.addEventListener('click', () => {
+                hamburgerBtn.classList.toggle('active');
+                mobileMenu.classList.toggle('active');
+            });
+            mobileMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => {
+                hamburgerBtn.classList.remove('active');
+                mobileMenu.classList.remove('active');
+            }));
+        }
+    </script>
+</body>
+</html>

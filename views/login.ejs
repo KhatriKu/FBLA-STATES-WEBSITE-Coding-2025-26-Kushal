@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Lost But Found</title>
+    <link rel="icon" type="image/png" href="/images/Favicon.png">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav id="nav-bar">
+        <div class="nav-left">
+            <a href="/"><img src="/images/Home-logo.png" alt="Lost But Found" width="48" height="48"></a>
+            <a href="/uploadItem">Submit Item</a>
+            <a href="/browse">Browse Items</a>
+            <a href="/claim">Claim Item</a>
+        </div>
+        <div class="nav-right">
+            <a href="/register" class="nav-auth">Register</a>
+            <a href="/login" class="nav-auth" style="color:#cc0000;">Login</a>
+            <a href="/admin/login" class="nav-auth">Admin</a>
+        </div>
+        <button class="hamburger-menu" id="hamburgerBtn">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="/">Home</a>
+        <a href="/uploadItem">Submit Item</a>
+        <a href="/browse">Browse Items</a>
+        <a href="/claim">Claim Item</a>
+        <a href="/register" class="nav-auth">Register</a>
+        <a href="/login" class="nav-auth">Login</a>
+        <a href="/admin/login" class="nav-auth">Admin</a>
+    </div>
+
+    <main>
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <h1>Welcome Back</h1>
+                    <p>Sign in to your account</p>
+                </div>
+
+                <div id="errorMessage" class="error-message"></div>
+
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required placeholder="your.email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required placeholder="Enter your password">
+                    </div>
+                    <div class="remember-me">
+                        <input type="checkbox" id="rememberMe" name="rememberMe">
+                        <label for="rememberMe">Remember me</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="loginBtn" style="width:100%;margin-bottom:20px;">
+                        Sign In
+                    </button>
+                </form>
+
+                <div class="signup-link">
+                    Don't have an account? <a href="/register">Create one</a>
+                </div>
+                <div class="back-home">
+                    <a href="/">Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>Lost But Found</h3>
+                <p class="footer-description">Helping reunite people with their lost belongings through a simple and secure platform.</p>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/browse">Browse Items</a></li>
+                    <li><a href="/uploadItem">Submit Item</a></li>
+                    <li><a href="/claim">Claim Item</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>User</h3>
+                <ul class="footer-links">
+                    <li><a href="/register">Register</a></li>
+                    <li><a href="/login">Login</a></li>
+                    <li><a href="/faq">FAQ</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Admin</h3>
+                <ul class="footer-links">
+                    <li><a href="/admin/login">Admin Login</a></li>
+                    <li><a href="/faq">Support</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-copyright">&copy; 2025 Lost But Found. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script>
+        // If already logged in, skip straight to destination
+        (function() {
+            const t = localStorage.getItem('userToken');
+            if (!t) return;
+            try {
+                const p = JSON.parse(atob(t.split('.')[1]));
+                if (!p.exp || Date.now() / 1000 < p.exp) {
+                    const next = new URLSearchParams(window.location.search).get('next');
+                    window.location.href = next || '/account';
+                } else {
+                    localStorage.removeItem('userToken');
+                }
+            } catch(e) { localStorage.removeItem('userToken'); }
+        })();
+
+        // Pre-fill remembered email
+        const rememberedEmail = localStorage.getItem('rememberEmail');
+        if (rememberedEmail) {
+            document.getElementById('email').value = rememberedEmail;
+            document.getElementById('rememberMe').checked = true;
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            document.getElementById('errorMessage').classList.remove('show');
+
+            const email      = document.getElementById('email').value.trim();
+            const password   = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            if (!email || !password) { showError('Please enter both email and password'); return; }
+
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.disabled   = true;
+            loginBtn.textContent = 'Signing in...';
+
+            try {
+                const response = await fetch('/api/login', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    localStorage.setItem('userToken', data.token);
+                    if (rememberMe) {
+                        localStorage.setItem('rememberEmail', email);
+                    } else {
+                        localStorage.removeItem('rememberEmail');
+                    }
+                    const next = new URLSearchParams(window.location.search).get('next');
+                    window.location.href = next || '/account';
+                } else {
+                    showError(data.error || 'Login failed. Check your email and password.');
+                    loginBtn.disabled    = false;
+                    loginBtn.textContent = 'Sign In';
+                    document.getElementById('password').value = '';
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+                loginBtn.disabled    = false;
+                loginBtn.textContent = 'Sign In';
+            }
+        });
+
+        function showError(message) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = message;
+            el.classList.add('show');
+            window.scrollTo(0, 0);
+        }
+
+        // Hamburger
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const mobileMenu   = document.getElementById('mobileMenu');
+        if (hamburgerBtn) {
+            hamburgerBtn.addEventListener('click', () => {
+                hamburgerBtn.classList.toggle('active');
+                mobileMenu.classList.toggle('active');
+            });
+            mobileMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => {
+                hamburgerBtn.classList.remove('active');
+                mobileMenu.classList.remove('active');
+            }));
+        }
+    </script>
+</body>
+</html>

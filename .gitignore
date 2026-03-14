@@ -1,0 +1,247 @@
+# ===================================================
+# LOST BUT FOUND - GITIGNORE CONFIGURATION
+# ===================================================
+# This file specifies which files and directories
+# should NOT be committed to version control
+# 
+# These are typically files containing sensitive
+# information, temporary files, and dependencies
+# ===================================================
+
+# ===================================================
+# ENVIRONMENT & SECRETS
+# ===================================================
+
+# Environment variables - CRITICAL
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# API Keys and credentials
+.api_key
+.credentials
+secrets/
+private/
+
+# ===================================================
+# DEPENDENCIES
+# ===================================================
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ===================================================
+# DATABASE FILES
+# ===================================================
+
+# SQLite database
+*.db
+*.sqlite
+*.sqlite3
+lostandfound.db
+
+# Database backups
+backups/
+*.sql
+*.sql.gz
+
+# ===================================================
+# LOG FILES
+# ===================================================
+
+logs/
+*.log
+npm-debug.log*
+
+# ===================================================
+# TEMPORARY FILES
+# ===================================================
+
+# OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/settings.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# ===================================================
+# BUILD & DIST
+# ===================================================
+
+# Build outputs
+dist/
+build/
+out/
+
+# ===================================================
+# IDE & EDITOR
+# ===================================================
+
+# VS Code
+.vscode/
+.vscode/extensions.json
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# WebStorm
+.WebStorm*
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+.vim/
+.swp
+.swo
+
+# Nano
+.nano/
+
+# ===================================================
+# UPLOADED FILES & MEDIA
+# ===================================================
+
+# User uploads
+public/uploads/*
+!public/uploads/.gitkeep
+
+# User avatars
+public/avatars/*
+!public/avatars/.gitkeep
+
+# Temporary uploads
+tmp/uploads/*
+!tmp/uploads/.gitkeep
+
+# ===================================================
+# CACHE FILES
+# ===================================================
+
+# Node cache
+.npm
+.eslintcache
+.cache/
+
+# Build cache
+.next/
+.cache/
+
+# ===================================================
+# CERTIFICATES & SSL
+# ===================================================
+
+# SSL certificates and keys
+certs/
+*.pem
+*.key
+*.crt
+*.cer
+
+# ===================================================
+# TEST FILES & COVERAGE
+# ===================================================
+
+# Jest coverage
+coverage/
+.coverage
+
+# Test results
+test-results/
+*.coverage
+
+# ===================================================
+# DOCUMENTATION
+# ===================================================
+
+# API documentation (auto-generated)
+docs/api/
+
+# ===================================================
+# CONFIGURATION BACKUPS
+# ===================================================
+
+# Backup files
+*.bak
+*.backup
+*.old
+*~
+
+# ===================================================
+# OS SPECIFIC
+# ===================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.directory
+.Trash-*
+
+# ===================================================
+# MISCELLANEOUS
+# ===================================================
+
+# IDE generated files
+*.class
+*.pyc
+*.pyo
+
+# Yarn
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# pnpm
+pnpm-debug.log
+
+# ===================================================
+# OPTIONAL: Uncomment if using specific tools
+# ===================================================
+
+# Docker
+# docker-compose.override.yml
+# .dockerignore
+
+# PM2
+# ecosystem.config.js
+
+# ===================================================
+# NOTES
+# ===================================================
+
+# Remember:
+# 1. .env files should NEVER be committed
+# 2. Use .env.example as a template
+# 3. Copy .env.example to .env locally
+# 4. Update .env with your actual values
+# 5. Add any new sensitive files here
+# 6. Review this file before sharing code

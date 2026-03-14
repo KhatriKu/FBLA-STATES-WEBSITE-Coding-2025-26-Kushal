@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Admin Login - Lost But Found</title>
+    <link rel="icon" type="image/png" href="/images/Favicon.png">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="nav-bar" class="transparent">
+    <div class="nav-left">
+        <a href="/" class="nav-logo">
+            <img src="/images/Home-logo.png" alt="Lost But Found" width="48" height="48">
+        </a>
+        <a href="/uploadItem">Submit Item</a>
+        <a href="/browse">Browse Items</a>
+        <a href="/claim">Claim Item</a>
+    </div>
+    <div class="nav-right">
+        <a href="/account" class="nav-auth">My Account</a>
+        <a href="/register" class="nav-auth">Register</a>
+        <a href="/login" class="nav-auth">Login</a>
+        <a href="/admin/login" class="nav-auth">Admin</a>
+    </div>
+    <button class="hamburger-menu" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="/">Home</a>
+    <a href="/uploadItem">Submit Item</a>
+    <a href="/browse">Browse Items</a>
+    <a href="/claim">Claim Item</a>
+    <a href="/account" class="nav-auth">My Account</a>
+    <a href="/register" class="nav-auth">Register</a>
+    <a href="/login" class="nav-auth">Login</a>
+    <a href="/admin/login" class="nav-auth">Admin</a>
+</div>
+
+    <main>
+        <div class="admin-login-container">
+            <div class="admin-login-card">
+                <div class="admin-login-header">
+                    <h1>Admin Portal</h1>
+                    <p>Restricted Access Only</p>
+                    <div class="admin-badge">🔐 Administrator</div>
+                </div>
+
+                <div id="errorMessage" class="error-message"></div>
+
+                <form id="adminLoginForm">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required placeholder="Enter your username">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required placeholder="Enter your password">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="loginBtn" style="width: 100%; margin-bottom: 20px;">
+                        Sign In to Admin Dashboard
+                    </button>
+                </form>
+
+                <div class="security-note">
+                    <strong>Security Notice:</strong> This portal is only for authorized administrators. All access attempts are logged and monitored.
+                </div>
+
+                <div class="back-home" style="margin-top: 20px;">
+                    <a href="/">Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>Lost But Found</h3>
+                <p class="footer-description">Helping reunite people with their lost belongings through a simple and secure platform.</p>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/browse">Browse Items</a></li>
+                    <li><a href="/upload">Submit Item</a></li>
+                    <li><a href="/claim">Claim Item</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>User</h3>
+                <ul class="footer-links">
+                    <li><a href="/register">Register</a></li>
+                    <li><a href="/login">Login</a></li>
+                    <li><a href="/faq">FAQ</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Admin</h3>
+                <ul class="footer-links">
+                    <li><a href="/admin/login">Admin Login</a></li>
+                    <li><a href="/faq">Support</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-copyright">&copy; 2025 Lost But Found. All rights reserved.</div>
+            <div class="footer-legal">
+                <div class="footer-legal-text">
+                    By using this platform, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                </div>
+            </div>
+            <div class="footer-bottom-links">
+                <a href="#">Terms</a>
+                <span class="divider">|</span>
+                <a href="#">Privacy</a>
+                <span class="divider">|</span>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Listen for scroll events
+    window.addEventListener('scroll', () => {
+        // Get the navbar element
+        const navbar = document.getElementById('nav-bar');
+        
+        // Check if page is scrolled down 50 pixels or more
+        if (window.scrollY > 50) {
+            // If yes, remove the 'transparent' class
+            navbar.classList.remove('transparent');
+        } else {
+            // If no (at top), add the 'transparent' class back
+            navbar.classList.add('transparent');
+        }
+    });
+    
+        document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            document.getElementById('errorMessage').classList.remove('show');
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showError('Please enter both username and password');
+                return;
+            }
+
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Verifying credentials...';
+
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    localStorage.setItem('adminToken', data.token);
+                    window.location.href = '/admin';
+                } else {
+                    showError(data.error || 'Invalid credentials');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Sign In to Admin Dashboard';
+                    document.getElementById('password').value = '';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('Network error. Please try again.');
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In to Admin Dashboard';
+            }
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            window.scrollTo(0, 0);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('adminToken');
+            if (token) {
+                window.location.href = '/admin';
+            }
+        });
+    </script>
+</body>
+</html>

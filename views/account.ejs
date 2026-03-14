@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account - Lost But Found</title>
+    <link rel="icon" type="image/png" href="/images/Favicon.png">
+    <link rel="stylesheet" href="/styles.css">
+    <style>
+        .account-container { max-width: 1100px; margin: 0 auto; padding: 90px 20px 60px; }
+        .account-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
+        .account-header h1 { font-size: 2.2em; color: #333; margin: 0; }
+        .logout-btn { padding: 10px 24px; background: #cc0000; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.95em; transition: all 0.2s; }
+        .logout-btn:hover { background: #aa0000; transform: translateY(-1px); }
+        .profile-card { background: #fff; border: 1px solid rgba(0,102,204,0.12); border-radius: 12px; padding: 28px; margin-bottom: 30px; box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .profile-field label { font-weight: 600; color: #0066cc; font-size: 0.85em; display: block; margin-bottom: 4px; }
+        .profile-field span { font-size: 1.05em; color: #333; }
+        .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 30px; }
+        .stat-card { background: #fff; border: 1px solid rgba(0,102,204,0.12); border-radius: 10px; padding: 22px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+        .stat-number { font-size: 2.4em; font-weight: 700; color: #0066cc; }
+        .stat-label { color: #666; font-weight: 600; font-size: 0.95em; margin-top: 4px; }
+        .tab-nav { display: flex; gap: 6px; margin-bottom: 24px; border-bottom: 2px solid #e0e0e0; flex-wrap: wrap; }
+        .tab-btn { padding: 11px 18px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-weight: 600; color: #666; font-size: 0.95em; transition: all 0.2s; margin-bottom: -2px; }
+        .tab-btn:hover { color: #0066cc; }
+        .tab-btn.active { color: #0066cc; border-bottom-color: #0066cc; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .item-row { display: flex; gap: 14px; padding: 16px; background: #fff; border: 1px solid rgba(0,102,204,0.1); border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); align-items: center; }
+        .item-thumb { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #f0f4ff; display: flex; align-items: center; justify-content: center; font-size: 1.8em; }
+        .item-thumb img { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; }
+        .item-info { flex: 1; min-width: 0; }
+        .item-info strong { display: block; font-size: 1.02em; color: #333; margin-bottom: 3px; }
+        .item-info small { color: #888; font-size: 0.88em; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.8em; font-weight: 600; margin-top: 5px; }
+        .badge-active   { background: #d4edda; color: #155724; }
+        .badge-pending  { background: #fff3cd; color: #856404; }
+        .badge-claimed  { background: #d1ecf1; color: #0c5460; }
+        .badge-returned { background: #d4edda; color: #155724; }
+        .badge-denied   { background: #f8d7da; color: #721c24; }
+        .badge-approved { background: #d4edda; color: #155724; }
+        .empty-state { text-align: center; padding: 50px 20px; color: #aaa; }
+        .empty-state .icon { font-size: 3em; margin-bottom: 12px; }
+        .empty-state p { font-size: 1.05em; margin-bottom: 18px; }
+        .empty-state a { display: inline-block; padding: 11px 28px; background: linear-gradient(135deg,#0066cc,#cc0000); color: white; text-decoration: none; border-radius: 6px; font-weight: 600; }
+        .settings-section { background: #fff; border: 1px solid rgba(0,102,204,0.12); border-radius: 12px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+        .settings-section h3 { color: #0066cc; margin-top: 0; margin-bottom: 18px; }
+        .settings-input { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 1em; box-sizing: border-box; margin-bottom: 12px; }
+        .settings-input:focus { outline: none; border-color: #0066cc; box-shadow: 0 0 0 3px rgba(0,102,204,0.1); }
+        .alert { padding: 10px 15px; border-radius: 6px; font-weight: 600; margin-bottom: 14px; display: none; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error   { background: #f8d7da; color: #721c24; }
+        @media (max-width: 600px) {
+            .account-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .profile-grid, .stats-row { grid-template-columns: 1fr; }
+            .tab-btn { padding: 9px 12px; font-size: 0.85em; }
+        }
+    </style>
+</head>
+<body>
+    <nav id="nav-bar" class="transparent">
+        <div class="nav-left">
+            <a href="/"><img src="/images/Home-logo.png" alt="Lost But Found" width="48" height="48"></a>
+            <a href="/uploadItem">Submit Item</a>
+            <a href="/browse">Browse Items</a>
+            <a href="/claim">Claim Item</a>
+        </div>
+        <div class="nav-right">
+            <a href="/account" style="color:#0066cc;font-weight:600;">My Account</a>
+            <a href="/admin/login" class="nav-auth">Admin</a>
+        </div>
+        <button class="hamburger-menu" id="hamburgerBtn" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="/">Home</a>
+        <a href="/uploadItem">Submit Item</a>
+        <a href="/browse">Browse Items</a>
+        <a href="/claim">Claim Item</a>
+        <a href="/account">My Account</a>
+        <a href="/admin/login">Admin</a>
+    </div>
+
+    <main>
+        <div class="account-container">
+
+            <!-- Header -->
+            <div class="account-header">
+                <div>
+                    <h1>My Account</h1>
+                    <p style="color:#666;margin:4px 0 0;">Manage your profile and submissions</p>
+                </div>
+                <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
+
+            <!-- Profile -->
+            <div class="profile-card">
+                <h2 style="color:#0066cc;margin-top:0;margin-bottom:18px;">Profile Information</h2>
+                <div class="profile-grid">
+                    <div class="profile-field">
+                        <label>Full Name</label>
+                        <span id="profileName">—</span>
+                    </div>
+                    <div class="profile-field">
+                        <label>Email Address</label>
+                        <span id="profileEmail">—</span>
+                    </div>
+                    <div class="profile-field">
+                        <label>Account Status</label>
+                        <span style="color:#155724;font-weight:600;">✓ Active</span>
+                    </div>
+                    <div class="profile-field">
+                        <label>Member Since</label>
+                        <span id="memberSince">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-number" id="uploadCount">—</div>
+                    <div class="stat-label">Items Submitted</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="claimCount">—</div>
+                    <div class="stat-label">Claims Made</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="overview"> Overview</button>
+                <button class="tab-btn" data-tab="uploads"> My Uploads</button>
+                <button class="tab-btn" data-tab="claims"> My Claims</button>
+                <button class="tab-btn" data-tab="settings"> Settings</button>
+            </div>
+
+            <!-- Overview -->
+            <div id="overview" class="tab-content active">
+                <div class="profile-card">
+                    <h3 style="color:#0066cc;margin-top:0;">Welcome to Your Dashboard</h3>
+                    <ul style="color:#555;line-height:2;">
+                        <li><strong> My Uploads</strong> — Items you submitted as found</li>
+                        <li><strong> My Claims</strong> — Claims you filed on found items</li>
+                        <li><strong> Settings</strong> — Change your password or delete account</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Uploads -->
+            <div id="uploads" class="tab-content">
+                <div id="uploadsList" style="padding:30px;text-align:center;color:#aaa;">Loading...</div>
+            </div>
+
+            <!-- Claims -->
+            <div id="claims" class="tab-content">
+                <div id="claimsList" style="padding:30px;text-align:center;color:#aaa;">Loading...</div>
+            </div>
+
+            <!-- Settings -->
+            <div id="settings" class="tab-content">
+                <!-- Change Password -->
+                <div class="settings-section">
+                    <h3>🔒 Change Password</h3>
+                    <div id="pwAlert" class="alert"></div>
+                    <input class="settings-input" type="password" id="currentPassword" placeholder="Current password">
+                    <input class="settings-input" type="password" id="newPassword"     placeholder="New password (min 8 characters)">
+                    <input class="settings-input" type="password" id="confirmPassword" placeholder="Confirm new password">
+                    <button onclick="changePassword()" style="padding:10px 24px;background:#0066cc;color:white;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
+                        Update Password
+                    </button>
+                </div>
+                <!-- Danger Zone -->
+                <div class="settings-section" style="border-color:rgba(204,0,0,0.25);">
+                    <h3 style="color:#cc0000;">⚠️ Danger Zone</h3>
+                    <p style="color:#666;margin-bottom:16px;">Permanently delete your account and all associated data. This cannot be undone.</p>
+                    <button onclick="deleteAccount()" style="padding:10px 24px;background:#cc0000;color:white;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
+                        Delete My Account
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>Lost But Found</h3>
+                <p class="footer-description">Helping reunite people with their lost belongings.</p>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/browse">Browse Items</a></li>
+                    <li><a href="/uploadItem">Submit Item</a></li>
+                    <li><a href="/claim">Claim Item</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Account</h3>
+                <ul class="footer-links">
+                    <li><a href="/account">My Account</a></li>
+                    <li><a href="/faq">FAQ</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Legal</h3>
+                <ul class="footer-links">
+                    <li><a href="/terms-of-service">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Lost But Found. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+    // ── AUTH WALL ────────────────────────────────────────────────────────────
+    const token = (function() {
+        const t = localStorage.getItem('userToken');
+        if (!t) { window.location.href = '/login?next=/account'; return null; }
+        try {
+            const p = JSON.parse(atob(t.split('.')[1]));
+            if (p.exp && Date.now() / 1000 > p.exp) {
+                localStorage.removeItem('userToken');
+                window.location.href = '/login?next=/account';
+                return null;
+            }
+            return t;
+        } catch(e) {
+            localStorage.removeItem('userToken');
+            window.location.href = '/login?next=/account';
+            return null;
+        }
+    })();
+
+    if (token) {
+        // ── LOAD ALL DATA ────────────────────────────────────────────────────
+        async function authFetch(url) {
+            const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (r.status === 401) {
+                localStorage.removeItem('userToken');
+                window.location.href = '/login?next=/account';
+                return null;
+            }
+            return r.json();
+        }
+
+        async function loadAll() {
+            // Profile
+            try {
+                const p = await authFetch('/api/user/profile');
+                if (p && p.success) {
+                    document.getElementById('profileName').textContent  = p.fullName  || '—';
+                    document.getElementById('profileEmail').textContent = p.email     || '—';
+                    document.getElementById('memberSince').textContent  = p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—';
+                }
+            } catch(e) { console.error('Profile error:', e); }
+
+            // Uploads
+            try {
+                const uploads = await authFetch('/api/user/uploads');
+                if (uploads) {
+                    const list = Array.isArray(uploads) ? uploads : [];
+                    document.getElementById('uploadCount').textContent = list.length;
+                    document.getElementById('uploadsList').innerHTML = list.length === 0
+                        ? `<div class="empty-state"><div class="icon"></div><p>No items submitted yet</p><a href="/uploadItem">Submit Your First Item</a></div>`
+                        : list.map(item => `
+                            <div class="item-row">
+                                <div class="item-thumb">
+                                    ${item.imageUrl
+                                        ? `<img src="${item.imageUrl}" alt="${item.itemName || 'Item'}">`
+                                        : ''}
+                                </div>
+                                <div class="item-info">
+                                    <strong>${item.itemName || item.name || 'Unknown Item'}</strong>
+                                    <small>📍 ${item.location || 'Not specified'} &nbsp;·&nbsp; ${item.dateFound ? new Date(item.dateFound).toLocaleDateString() : 'N/A'}</small><br>
+                                    <span class="badge badge-${item.status}">${statusLabel(item.status)}</span>
+                                </div>
+                            </div>`).join('');
+                }
+            } catch(e) { document.getElementById('uploadsList').innerHTML = '<div class="empty-state"><p>Failed to load uploads.</p></div>'; }
+
+            // Claims
+            try {
+                const claims = await authFetch('/api/user/claims');
+                if (claims) {
+                    const list = Array.isArray(claims) ? claims : [];
+                    document.getElementById('claimCount').textContent = list.length;
+                    document.getElementById('claimsList').innerHTML = list.length === 0
+                        ? `<div class="empty-state"><div class="icon"></div><p>No claims made yet</p><a href="/browse">Browse Items</a></div>`
+                        : list.map(claim => `
+                            <div class="item-row">
+                                <div class="item-thumb">
+                                    ${claim.imageUrl
+                                        ? `<img src="${claim.imageUrl}" alt="${claim.itemName || 'Item'}">`
+                                        : ''}
+                                </div>
+                                <div class="item-info">
+                                    <strong>${claim.itemName || 'Unknown Item'}</strong>
+                                    <small>📍 ${claim.location || 'N/A'} &nbsp;·&nbsp;  ${claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : 'N/A'}</small><br>
+                                    <span class="badge badge-${claim.status}">${claimStatusLabel(claim.status)}</span>
+                                </div>
+                            </div>`).join('');
+                }
+            } catch(e) { document.getElementById('claimsList').innerHTML = '<div class="empty-state"><p>Failed to load claims.</p></div>'; }
+        }
+
+        function statusLabel(s) {
+            return { active:'✓ Available', pending:'⏳ Pending', claimed:'• Claimed', returned:'✓ Returned', rejected:'✗ Rejected' }[s] || s;
+        }
+        function claimStatusLabel(s) {
+            return { pending:' Pending Review', approved:'✓ Approved', denied:'✗ Denied' }[s] || s;
+        }
+
+        // ── SETTINGS ─────────────────────────────────────────────────────────
+        async function changePassword() {
+            const current  = document.getElementById('currentPassword').value;
+            const newPw    = document.getElementById('newPassword').value;
+            const confirm  = document.getElementById('confirmPassword').value;
+            const alertEl  = document.getElementById('pwAlert');
+
+            function showAlert(msg, ok) {
+                alertEl.textContent  = msg;
+                alertEl.className    = 'alert ' + (ok ? 'alert-success' : 'alert-error');
+                alertEl.style.display = 'block';
+            }
+
+            if (!current || !newPw || !confirm)  return showAlert('Please fill in all three fields.', false);
+            if (newPw.length < 8)                return showAlert('New password must be at least 8 characters.', false);
+            if (newPw !== confirm)               return showAlert('New passwords do not match.', false);
+
+            try {
+                const r    = await fetch('/api/user/password', {
+                    method:  'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ currentPassword: current, newPassword: newPw })
+                });
+                const data = await r.json();
+                if (data.success) {
+                    showAlert('✓ Password updated successfully!', true);
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value     = '';
+                    document.getElementById('confirmPassword').value = '';
+                } else {
+                    showAlert(data.message || 'Failed to update password.', false);
+                }
+            } catch(e) { showAlert('Network error. Please try again.', false); }
+        }
+
+        async function deleteAccount() {
+            if (!confirm('Are you sure you want to permanently delete your account?\nThis will also delete all your submitted items and claims.')) return;
+            if (!confirm('Final confirmation — this cannot be undone. Delete account?')) return;
+            try {
+                const r    = await fetch('/api/user/account', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await r.json();
+                if (data.success) {
+                    localStorage.removeItem('userToken');
+                    alert('Your account has been deleted.');
+                    window.location.href = '/';
+                } else {
+                    alert('Failed: ' + (data.message || 'Unknown error'));
+                }
+            } catch(e) { alert('Network error. Please try again.'); }
+        }
+
+        // ── TABS ─────────────────────────────────────────────────────────────
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ── LOGOUT ───────────────────────────────────────────────────────────
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('userToken');
+            window.location.href = '/';
+        });
+
+        // ── NAVBAR ───────────────────────────────────────────────────────────
+        window.addEventListener('scroll', () => {
+            document.getElementById('nav-bar').classList.toggle('transparent', window.scrollY <= 50);
+        });
+
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const mobileMenu   = document.getElementById('mobileMenu');
+        if (hamburgerBtn) {
+            hamburgerBtn.addEventListener('click', () => {
+                hamburgerBtn.classList.toggle('active');
+                mobileMenu.classList.toggle('active');
+            });
+            mobileMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => {
+                hamburgerBtn.classList.remove('active');
+                mobileMenu.classList.remove('active');
+            }));
+        }
+
+        // ── INIT ─────────────────────────────────────────────────────────────
+        loadAll();
+    }
+    </script>
+</body>
+</html>

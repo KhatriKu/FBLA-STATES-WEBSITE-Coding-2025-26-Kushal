@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Submit Found Item - Lost But Found</title>
+    <link rel="icon" type="image/png" href="/images/Favicon.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <!-- TensorFlow.js + MobileNet for AI item classification -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+    <!-- Lucide icons for camera button -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        /* AI Scan styles */
+        #aiScanBtn {
+            display: flex; align-items: center; gap: 8px;
+            margin-top: 14px; padding: 10px 20px;
+            background: linear-gradient(135deg, #0066cc 0%, #cc0000 100%);
+            color: white; border: none; border-radius: 8px;
+            font-size: 0.9em; font-weight: 600; cursor: pointer;
+            transition: all 0.25s; font-family: inherit;
+        }
+        #aiScanBtn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,102,204,0.35); }
+        #aiScanBtn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        #aiScanBtn svg { width: 18px; height: 18px; stroke: white; stroke-width: 2; fill: none; }
+        #aiStatusBadge {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 0.78em; color: #888; margin-top: 8px;
+        }
+        #aiStatusDot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #ccc; flex-shrink: 0;
+            transition: background 0.3s;
+        }
+        #aiStatusDot.loading { background: #f0a500; animation: pulse 1s infinite; }
+        #aiStatusDot.ready   { background: #28a745; }
+        #aiStatusDot.error   { background: #cc0000; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        /* Suggestion card */
+        #aiSuggestionCard {
+            display: none; margin-top: 16px;
+            background: linear-gradient(135deg, rgba(0,102,204,0.06) 0%, rgba(204,0,0,0.06) 100%);
+            border: 1.5px solid rgba(0,102,204,0.2);
+            border-radius: 10px; padding: 16px 18px;
+            animation: slideDown 0.3s ease;
+        }
+        #aiSuggestionCard .ai-label {
+            font-size: 0.75em; font-weight: 700; letter-spacing: .06em;
+            text-transform: uppercase; color: #0066cc; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        #aiSuggestionCard .ai-label svg { width: 14px; height: 14px; stroke: #0066cc; fill: none; }
+        #aiDetectedItem { font-size: 1.05em; font-weight: 700; color: #222; margin-bottom: 4px; }
+        #aiDetectedCategory { font-size: 0.85em; color: #555; margin-bottom: 14px; }
+        .ai-actions { display: flex; gap: 10px; }
+        .ai-btn-yes {
+            flex: 1; padding: 8px 14px; border-radius: 6px; border: none;
+            background: linear-gradient(135deg, #0066cc, #cc0000);
+            color: white; font-weight: 600; font-size: 0.85em;
+            cursor: pointer; transition: opacity 0.2s; font-family: inherit;
+        }
+        .ai-btn-yes:hover { opacity: 0.88; }
+        .ai-btn-no {
+            flex: 1; padding: 8px 14px; border-radius: 6px;
+            border: 1.5px solid #ccc; background: white;
+            color: #555; font-size: 0.85em; cursor: pointer;
+            transition: border-color 0.2s; font-family: inherit;
+        }
+        .ai-btn-no:hover { border-color: #0066cc; color: #0066cc; }
+        #aiRawPredictions { font-size: 0.75em; color: #aaa; margin-top: 10px; line-height: 1.6; }
+
+        /* Photo input row */
+        .photo-input-row { display: flex; gap: 14px; align-items: stretch; }
+        .take-photo-btn-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #takePhotoBtn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 18px; border-radius: 8px;
+            border: 2px solid #0066cc; background: white;
+            color: #0066cc; font-weight: 600; font-size: 0.9em;
+            cursor: pointer; transition: all 0.2s; font-family: inherit;
+            white-space: nowrap;
+        }
+        #takePhotoBtn:hover { background: #0066cc; color: white; }
+        #takePhotoBtn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; }
+
+        /* Take Photo & Scan button */
+        #takeAndScanBtn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 18px; border-radius: 8px;
+            border: 2px solid #cc0000; background: white;
+            color: #cc0000; font-weight: 600; font-size: 0.9em;
+            cursor: pointer; transition: all 0.2s; font-family: inherit;
+        }
+        #takeAndScanBtn:hover { background: #cc0000; color: white; }
+        #takeAndScanBtn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; }
+
+        /* Camera modal */
+        #cameraModal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7); z-index: 9999;
+            align-items: center; justify-content: center;
+        }
+        #cameraModal.open { display: flex; }
+        #cameraCard {
+            background: white; border-radius: 14px; overflow: hidden;
+            width: min(480px, 95vw); box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        #cameraHeader {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #0066cc, #cc0000); color: white;
+        }
+        #cameraTitle { font-weight: 700; font-size: 0.95em; }
+        #cameraCloseBtn {
+            background: none; border: none; color: white;
+            font-size: 1.2em; cursor: pointer; padding: 2px 6px;
+            border-radius: 4px; transition: background 0.2s;
+        }
+        #cameraCloseBtn:hover { background: rgba(255,255,255,0.2); }
+        #cameraVideo {
+            width: 100%; display: block; background: #000;
+            max-height: 340px; object-fit: cover;
+        }
+        #cameraActions {
+            display: flex; gap: 10px; padding: 14px 18px;
+            justify-content: center;
+        }
+        #captureBtn, #retakeBtn, #useCaptureBtn {
+            display: flex; align-items: center; gap: 7px;
+            padding: 10px 22px; border-radius: 8px; border: none;
+            font-weight: 600; font-size: 0.9em; cursor: pointer;
+            font-family: inherit; transition: all 0.2s;
+        }
+        #captureBtn {
+            background: linear-gradient(135deg, #0066cc, #cc0000); color: white;
+        }
+        #captureBtn:hover { opacity: 0.88; }
+        #retakeBtn { background: #f0f0f0; color: #555; }
+        #retakeBtn:hover { background: #e0e0e0; }
+        #useCaptureBtn { background: #28a745; color: white; }
+        #useCaptureBtn:hover { background: #218838; }
+        #captureBtn svg, #retakeBtn svg, #useCaptureBtn svg {
+            width: 16px; height: 16px; stroke: currentColor; fill: none;
+        }
+
+        @media (max-width: 600px) {
+            .photo-input-row { flex-direction: column; }
+            .take-photo-btn-wrap { flex-direction: row; gap: 10px; align-items: center; }
+        }
+
+        #map-picker { height: 320px; border-radius: 8px; border: 2px solid #e0e0e0; margin-top: 12px; transition: border-color 0.3s; }
+        #map-picker.has-pin { border-color: #0066cc; }
+        .map-pin-note { font-size: 0.85em; color: #888; margin-top: 6px; }
+        .map-pin-note.selected { color: #0066cc; font-weight: 600; }
+        .floor-radio-label {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 18px; border-radius: 20px; cursor: pointer;
+            border: 1.5px solid #e0e0e0; font-size: 0.9em; color: #555;
+            transition: all 0.2s; user-select: none;
+        }
+        .floor-radio-label input[type="radio"] { display: none; }
+        .floor-radio-label:hover { border-color: #0066cc; color: #0066cc; }
+        .floor-radio-label.active-floor { border-color: #0066cc; background: #0066cc; color: white; font-weight: 600; }
+    </style>
+    <style>
+        .upload-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 80px 20px 40px;
+        }
+
+        .upload-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .upload-header h1 {
+            font-size: 2.5em;
+            color: #333;
+            margin: 0 0 15px 0;
+        }
+
+        .upload-header p {
+            font-size: 1.2em;
+            color: #666;
+            margin: 0;
+        }
+
+        .upload-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 102, 204, 0.15);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            padding: 40px;
+        }
+
+        .form-section {
+            margin-bottom: 40px;
+        }
+
+        .form-section h3 {
+            font-size: 1.2em;
+            color: #0066cc;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        .required {
+            color: #cc0000;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            border: 2px dashed #0066cc;
+            border-radius: 8px;
+            background: rgba(0, 102, 204, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .file-input-label:hover {
+            background: rgba(0, 102, 204, 0.1);
+            border-color: #cc0000;
+        }
+
+        .file-input-label input[type="file"] {
+            display: none;
+        }
+
+        .image-preview {
+            margin-top: 20px;
+            display: none;
+            text-align: center;
+        }
+
+        .image-preview img {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-info {
+            padding: 15px;
+            background: #f0f8ff;
+            border-left: 4px solid #0066cc;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 14px 35px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0066cc 0%, #cc0000 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 102, 204, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+            flex: 1;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading-indicator {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .loading-indicator.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0066cc;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .upload-header h1 {
+                font-size: 1.8em;
+            }
+
+            .upload-card {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .upload-container {
+                padding: 60px 15px 30px;
+            }
+
+            .upload-header h1 {
+                font-size: 1.5em;
+            }
+
+            .upload-card {
+                padding: 15px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="nav-bar" class="transparent">
+    <div class="nav-left">
+        <a href="/" class="nav-logo">
+            <img src="/images/Home-logo.png" alt="Lost But Found" width="48" height="48">
+        </a>
+        <a href="/uploadItem">Submit Item</a>
+        <a href="/browse">Browse Items</a>
+        <a href="/claim">Claim Item</a>
+    </div>
+    <div class="nav-right">
+        <a href="/account" class="nav-auth">My Account</a>
+        <a href="/register" class="nav-auth">Register</a>
+        <a href="/login" class="nav-auth">Login</a>
+        <a href="/admin/login" class="nav-auth">Admin</a>
+    </div>
+    <button class="hamburger-menu" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="/">Home</a>
+    <a href="/uploadItem">Submit Item</a>
+    <a href="/browse">Browse Items</a>
+    <a href="/claim">Claim Item</a>
+    <a href="/account" class="nav-auth">My Account</a>
+    <a href="/register" class="nav-auth">Register</a>
+    <a href="/login" class="nav-auth">Login</a>
+    <a href="/admin/login" class="nav-auth">Admin</a>
+</div>
+
+    <main>
+        <div class="upload-container">
+            <div class="upload-header">
+                <h1>Submit a Found Item</h1>
+                <p>Help us return lost items to their owners by providing details about what you found</p>
+            </div>
+
+            <div id="statusMessage" class="status-message"></div>
+
+            <div class="upload-card">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <!-- Section 1: Item Details -->
+                    <div class="form-section">
+                        <h3>Item Details</h3>
+
+                        <div class="form-group">
+                            <label for="itemName">Item Name <span class="required">*</span></label>
+                            <input type="text" id="itemName" name="itemName" required maxlength="255"
+                                   placeholder="e.g., Black iPhone 14 Pro Max">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" rows="4" maxlength="1000"
+                                      placeholder="Describe the item in detail. Include color, brand, condition, distinctive features, etc."></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="category">Category</label>
+                                <select id="category" name="category"><option value="">Select a category</option></select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="dateFound">Date Found <span class="required">*</span></label>
+                                <input type="date" id="dateFound" name="dateFound" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Location Information -->
+                    <div class="form-section">
+                        <h3>Location & Contact</h3>
+
+                        <div class="form-group">
+                            <label for="location">Where was it found? <span class="required">*</span></label>
+                            <input type="text" id="location" name="location" required maxlength="255"
+                                   placeholder="e.g., Library building, 2nd floor, near entrance">
+
+                            <!-- Floor selector -->
+                            <div style="margin-top:16px;margin-bottom:14px;">
+                                <label style="font-weight:600;color:#333;font-size:0.95em;display:block;margin-bottom:8px;">
+                                    Which floor? <span style="color:#999;font-weight:400;">(optional)</span>
+                                </label>
+                                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                                    <label class="floor-radio-label active-floor" id="floorLbl0">
+                                        <input type="radio" name="pinFloorRadio" value="" checked onchange="setFloor('')"> Not sure
+                                    </label>
+                                    <label class="floor-radio-label" id="floorLbl1">
+                                        <input type="radio" name="pinFloorRadio" value="1" onchange="setFloor('1')"> Floor 1
+                                    </label>
+                                    <label class="floor-radio-label" id="floorLbl2">
+                                        <input type="radio" name="pinFloorRadio" value="2" onchange="setFloor('2')"> Floor 2
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Leaflet pin picker -->
+                            <label style="font-weight:600;color:#333;font-size:0.95em;display:block;margin-bottom:6px;">
+                                Pin the exact spot <span style="color:#999;font-weight:400;">(optional)</span>
+                            </label>
+                            <div id="map-picker"></div>
+                            <p class="map-pin-note" id="mapPinNote">Click anywhere on the map to drop a pin</p>
+
+                            <!-- Hidden fields submitted with form -->
+                            <input type="hidden" id="pinLat"   name="pinLat"   value="">
+                            <input type="hidden" id="pinLng"   name="pinLng"   value="">
+                            <input type="hidden" id="pinFloor" name="pinFloor" value="">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="contactName">Your Name <span class="required">*</span></label>
+                                <input type="text" id="contactName" name="contactName" required maxlength="255"
+                                       placeholder="Your full name">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contactNumber">Phone Number <span class="required">*</span></label>
+                                <input type="tel" id="contactNumber" name="contactNumber" required maxlength="20"
+                                       placeholder="(555) 123-4567">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contactEmail">Email Address <span class="required">*</span></label>
+                            <input type="email" id="contactEmail" name="contactEmail" required
+                                   placeholder="your.email@example.com">
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Image Upload -->
+                    <div class="form-section">
+                        <h3>Item Photo (Optional)</h3>
+
+                        <div class="form-info">
+                            Upload a clear photo of the item. This greatly increases the chances of finding the owner.
+                        </div>
+
+                        <!-- Upload row: file upload + take photo -->
+                        <div class="photo-input-row">
+                            <div class="file-input-wrapper" style="flex:1;">
+                                <label class="file-input-label">
+                                    <input type="file" id="itemImage" name="itemImage" accept="image/*">
+                                    <div>
+                                        <div style="font-size:2em;margin-bottom:10px;"><i class="fa-solid fa-cloud-arrow-up" style="background:linear-gradient(135deg,#0066cc,#cc0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i></div>
+                                        <div style="font-weight:600;color:#0066cc;">Click to upload or drag and drop</div>
+                                        <div style="font-size:0.9em;color:#999;margin-top:5px;">JPG, PNG, GIF up to 5MB</div>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div class="take-photo-btn-wrap">
+                                <button type="button" id="takePhotoBtn" onclick="openCamera()">
+                                    <i data-lucide="camera"></i>
+                                    Take Photo
+                                </button>
+                                <div style="font-size:0.78em;color:#aaa;margin-top:6px;text-align:center;">Use your camera</div>
+                            </div>
+                        </div>
+
+                        <!-- Camera modal -->
+                        <div id="cameraModal">
+                            <div id="cameraCard">
+                                <div id="cameraHeader">
+                                    <span id="cameraTitle"><i data-lucide="camera" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"></i>Take a Photo</span>
+                                    <button id="cameraCloseBtn" onclick="closeCamera()" aria-label="Close">&#x2715;</button>
+                                </div>
+                                <video id="cameraVideo" autoplay playsinline muted></video>
+                                <canvas id="cameraCanvas" style="display:none;"></canvas>
+                                <div id="cameraActions">
+                                    <button id="captureBtn" onclick="capturePhoto()">
+                                        <i data-lucide="aperture"></i>
+                                        Capture
+                                    </button>
+                                    <button id="retakeBtn" style="display:none;" onclick="retakePhoto()">
+                                        <i data-lucide="rotate-ccw"></i>
+                                        Retake
+                                    </button>
+                                    <button id="useCaptureBtn" style="display:none;" onclick="useCapture()">
+                                        <i data-lucide="check"></i>
+                                        Use Photo
+                                    </button>
+                                </div>
+                                <div id="cameraError" style="display:none;color:#cc0000;font-size:0.85em;padding:10px;text-align:center;"></div>
+                            </div>
+                        </div>
+
+                        <div id="imagePreview" class="image-preview">
+                            <img id="previewImage" alt="Preview">
+                        </div>
+
+                        <!-- AI Scan + Take Photo & Scan buttons -->
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:4px;">
+                            <button type="button" id="aiScanBtn" disabled onclick="runAIScan()">
+                                <i data-lucide="scan-search"></i>
+                                Scan with AI
+                            </button>
+                            <button type="button" id="takeAndScanBtn" onclick="openCameraAndScan()">
+                                <i data-lucide="camera"></i>
+                                Take Photo &amp; Scan
+                            </button>
+                            <span id="aiStatusBadge">
+                                <span id="aiStatusDot" class="loading"></span>
+                                <span id="aiStatusText">Loading AI model...</span>
+                            </span>
+                        </div>
+
+                        <!-- AI Suggestion Card -->
+                        <div id="aiSuggestionCard">
+                            <div class="ai-label">
+                                <i data-lucide="sparkles"></i>
+                                AI Detection Result
+                            </div>
+                            <div id="aiDetectedItem">—</div>
+                            <div id="aiDetectedCategory">Suggested category: —</div>
+                            <div class="ai-actions">
+                                <button class="ai-btn-yes" onclick="acceptAISuggestion()">
+                                    ✓ Yes, use this category
+                                </button>
+                                <button class="ai-btn-no" onclick="dismissAISuggestion()">
+                                    ✗ No, I'll pick manually
+                                </button>
+                            </div>
+                            <div id="aiRawPredictions"></div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Actions -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            Submit Found Item
+                        </button>
+                        <button type="reset" class="btn btn-secondary">
+                            Clear Form
+                        </button>
+                    </div>
+
+                    <!-- Loading Indicator -->
+                    <div id="loadingIndicator" class="loading-indicator">
+                        <div class="spinner"></div>
+                        <p>Submitting your item... Please wait</p>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>Lost But Found</h3>
+                <p class="footer-description">Helping reunite people with their lost belongings through a simple and secure platform.</p>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/browse">Browse Items</a></li>
+                    <li><a href="/uploadItem">Submit Item</a></li>
+                    <li><a href="/claim">Claim Item</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>User</h3>
+                <ul class="footer-links">
+                    <li><a href="/register">Register</a></li>
+                    <li><a href="/login">Login</a></li>
+                    <li><a href="/faq">FAQ</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Legal</h3>
+                <ul class="footer-links">
+                    <li><a href="/terms-of-service">Terms of Service</a></li>
+                    <li><a href="/">Privacy Policy</a></li>
+                    <li><a href="/">About Us</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Lost But Found. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Auth wall
+        (function() {
+            const t = localStorage.getItem('userToken');
+            if (!t) { window.location.href = '/login?next=/uploadItem'; return; }
+            try {
+                const p = JSON.parse(atob(t.split('.')[1]));
+                if (p.exp && Date.now() / 1000 > p.exp) {
+                    localStorage.removeItem('userToken');
+                    window.location.href = '/login?next=/uploadItem';
+                    return;
+                }
+                // Auto-fill contact fields from token
+                if (p.name)  { const el = document.getElementById('contactName');  if (el) el.value = p.name; }
+                if (p.email) { const el = document.getElementById('contactEmail'); if (el) el.value = p.email; }
+            } catch(e) { localStorage.removeItem('userToken'); window.location.href = '/login?next=/uploadItem'; }
+        })();
+
+        // Load categories from API
+        (async function() {
+            try {
+                const res  = await fetch('/api/categories');
+                const data = await res.json();
+                if (data.success) {
+                    const sel = document.getElementById('category');
+                    data.categories.forEach(cat => {
+                        const opt = document.createElement('option');
+                        opt.value = cat.name; opt.textContent = cat.name;
+                        sel.appendChild(opt);
+                    });
+                }
+            } catch(e) {}
+        })();
+
+        // Image preview handler
+        const imageInput = document.getElementById('itemImage');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImage = document.getElementById('previewImage');
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    previewImage.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Drag and drop for file input
+        const fileLabel = document.querySelector('.file-input-label');
+        
+        fileLabel.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileLabel.style.background = 'rgba(0, 102, 204, 0.15)';
+            fileLabel.style.borderColor = '#cc0000';
+        });
+
+        fileLabel.addEventListener('dragleave', () => {
+            fileLabel.style.background = 'rgba(0, 102, 204, 0.05)';
+            fileLabel.style.borderColor = '#0066cc';
+        });
+
+        fileLabel.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileLabel.style.background = 'rgba(0, 102, 204, 0.05)';
+            fileLabel.style.borderColor = '#0066cc';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                imageInput.files = files;
+                const event = new Event('change', { bubbles: true });
+                imageInput.dispatchEvent(event);
+            }
+        });
+
+        // Form submission handler
+        const uploadForm = document.getElementById('uploadForm');
+        const statusMessage = document.getElementById('statusMessage');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const submitBtn = document.getElementById('submitBtn');
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Validate required fields
+            const itemName = document.getElementById('itemName').value.trim();
+            const dateFound = document.getElementById('dateFound').value;
+            const location = document.getElementById('location').value.trim();
+            const contactName = document.getElementById('contactName').value.trim();
+            const contactNumber = document.getElementById('contactNumber').value.trim();
+            const contactEmail = document.getElementById('contactEmail').value.trim();
+
+            if (!itemName || !dateFound || !location || !contactName || !contactNumber || !contactEmail) {
+                showStatus('Please fill in all required fields', 'error');
+                return;
+            }
+
+            try {
+                showLoading(true);
+
+                // Create FormData object
+                const formData = new FormData();
+                formData.append('itemName', itemName);
+                formData.append('description', document.getElementById('description').value);
+                formData.append('category', document.getElementById('category').value);
+                formData.append('dateFound', dateFound);
+                formData.append('location', location);
+                formData.append('contactName', contactName);
+                formData.append('contactNumber', contactNumber);
+                formData.append('contactEmail', contactEmail);
+
+                // Pin coordinates (optional — only if user dropped a marker)
+                const pinLat = document.getElementById('pinLat').value;
+                const pinLng = document.getElementById('pinLng').value;
+                const pinFloor = document.getElementById('pinFloor').value;
+                if (pinLat && pinLng) {
+                    formData.append('pinLat', pinLat);
+                    formData.append('pinLng', pinLng);
+                }
+                if (pinFloor) {
+                    formData.append('pinFloor', pinFloor);
+                }
+
+                // Add image if selected
+                const imageFile = imageInput.files[0];
+                if (imageFile) {
+                    formData.append('itemImage', imageFile);
+                }
+
+                // Submit to server
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showStatus('Item submitted successfully! Thank you for helping.', 'success');
+                    uploadForm.reset();
+                    imagePreview.style.display = 'none';
+                    
+                    // Redirect after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/browse';
+                    }, 2000);
+                } else {
+                    showStatus(data.message || 'Failed to submit item. Please try again.', 'error');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showStatus('Error submitting item. Please check your connection and try again.', 'error');
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message status-${type} show`;
+            window.scrollTo(0, 0);
+
+            setTimeout(() => {
+                statusMessage.classList.remove('show');
+            }, 6000);
+        }
+
+        function showLoading(show) {
+            if (show) {
+                loadingIndicator.classList.add('show');
+                submitBtn.disabled = true;
+            } else {
+                loadingIndicator.classList.remove('show');
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('nav-bar');
+            if (window.scrollY > 50) {
+                navbar.classList.remove('transparent');
+            } else {
+                navbar.classList.add('transparent');
+            }
+        });
+
+        // Hamburger menu toggle
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        if (hamburgerBtn) {
+            hamburgerBtn.addEventListener('click', () => {
+                hamburgerBtn.classList.toggle('active');
+                mobileMenu.classList.toggle('active');
+            });
+
+            mobileMenu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    hamburgerBtn.classList.remove('active');
+                    mobileMenu.classList.remove('active');
+                });
+            });
+        }
+    </script>
+
+    <script>
+    // ── TENSORFLOW MOBILENET AI CLASSIFICATION ────────────────────────────────
+    // Loads MobileNet model on page open, classifies item image on demand.
+    // Maps ImageNet class names → your existing Lost But Found categories.
+
+    let mobileNetModel = null;
+    let aiSuggestedCategory = null;
+    let aiSuggestedName     = null;
+
+    // ── CATEGORY MAP ──────────────────────────────────────────────────────────
+    // Keys are substrings matched against MobileNet class names (lowercase).
+    // Values are your exact category names from the DB.
+    const CATEGORY_MAP = [
+        { keywords: ['phone','cellular','mobile','iphone','smartphone','ipod'],       category: 'Electronics' },
+        { keywords: ['laptop','notebook computer','computer','keyboard','mouse','remote','calculator','headphone','earphone','airpod','speaker'],  category: 'Electronics' },
+        { keywords: ['backpack','bag','purse','wallet','handbag','suitcase','briefcase'], category: 'Accessories' },
+        { keywords: ['watch','jewelry','necklace','bracelet','ring','sunglasses','glasses','spectacles'], category: 'Accessories' },
+        { keywords: ['shoe','sneaker','boot','sandal','running shoe','loafer'],        category: 'Clothing' },
+        { keywords: ['jacket','coat','shirt','jersey','sweatshirt','hoodie','hat','cap','glove','scarf','tie'], category: 'Clothing' },
+        { keywords: ['book','notebook','binder','pencil','pen','ruler','scissors','folder','textbook'], category: 'Books & Supplies' },
+        { keywords: ['key','umbrella','id','badge','card','bottle','mug','cup'],       category: 'Personal Items' },
+        { keywords: ['ball','racket','glove','helmet','bat','bicycle','gym','dumbbell'], category: 'Sports Equipment' },
+    ];
+
+    function mapToCategory(predictions) {
+        for (const pred of predictions) {
+            const name = pred.className.toLowerCase();
+            for (const rule of CATEGORY_MAP) {
+                if (rule.keywords.some(kw => name.includes(kw))) {
+                    return { category: rule.category, matchedName: pred.className, confidence: pred.probability };
+                }
+            }
+        }
+        return { category: 'Other', matchedName: predictions[0]?.className || 'Unknown item', confidence: predictions[0]?.probability || 0 };
+    }
+
+    // ── LOAD MODEL ON PAGE OPEN ───────────────────────────────────────────────
+    (async function loadModel() {
+        const dot  = document.getElementById('aiStatusDot');
+        const text = document.getElementById('aiStatusText');
+        const btn  = document.getElementById('aiScanBtn');
+        try {
+            mobileNetModel = await mobilenet.load({ version: 2, alpha: 1.0 });
+            dot.className  = 'ready';
+            text.textContent = 'AI ready';
+            btn.disabled = false;
+            // Enable button only if image already loaded
+            if (document.getElementById('previewImage').src) btn.disabled = false;
+        } catch (err) {
+            dot.className  = 'error';
+            text.textContent = 'AI unavailable';
+            console.error('MobileNet load error:', err);
+        }
+    })();
+
+    // ── RUN SCAN ──────────────────────────────────────────────────────────────
+    async function runAIScan() {
+        const img  = document.getElementById('previewImage');
+        const btn  = document.getElementById('aiScanBtn');
+        const card = document.getElementById('aiSuggestionCard');
+
+        if (!img.src || !img.complete) {
+            alert('Please upload an image first.');
+            return;
+        }
+        if (!mobileNetModel) {
+            alert('AI model is still loading, please wait a moment.');
+            return;
+        }
+
+        // Scanning state
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" style="animation:spin 1s linear infinite;display:inline-block"></i> Scanning...';
+        lucide.createIcons();
+        card.style.display = 'none';
+
+        try {
+            const predictions = await mobileNetModel.classify(img, 5);
+            const result      = mapToCategory(predictions);
+
+            aiSuggestedCategory = result.category;
+            aiSuggestedName     = result.matchedName;
+
+            // Populate suggestion card
+            document.getElementById('aiDetectedItem').textContent =
+                result.matchedName + ' (' + Math.round(result.confidence * 100) + '% confidence)';
+            document.getElementById('aiDetectedCategory').innerHTML =
+                'Suggested category: <strong>' + result.category + '</strong><br>'
+                + 'Suggested item name: <strong>' + result.matchedName + '</strong>';
+            document.getElementById('aiRawPredictions').innerHTML =
+                'Also detected: ' + predictions.slice(1, 4).map(p =>
+                    p.className + ' (' + Math.round(p.probability * 100) + '%)').join(', ');
+
+            card.style.display = 'block';
+
+        } catch (err) {
+            console.error('Classification error:', err);
+            alert('Scan failed. Please try again.');
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="camera"></i> Scan with AI';
+        lucide.createIcons();
+    }
+
+    // ── ACCEPT SUGGESTION ─────────────────────────────────────────────────────
+    function acceptAISuggestion() {
+        if (!aiSuggestedCategory) return;
+
+        // Fill category dropdown
+        const sel = document.getElementById('category');
+        for (const opt of sel.options) {
+            if (opt.value === aiSuggestedCategory || opt.text === aiSuggestedCategory) {
+                sel.value = opt.value;
+                sel.style.transition = 'border-color 0.3s';
+                sel.style.borderColor = '#28a745';
+                setTimeout(() => sel.style.borderColor = '', 1500);
+                break;
+            }
+        }
+
+        // Fill item name — only if the field is currently empty
+        if (aiSuggestedName) {
+            const nameField = document.getElementById('itemName');
+            if (!nameField.value.trim()) {
+                // Capitalise first letter of each word for a clean name
+                nameField.value = aiSuggestedName
+                    .split(',')[0]          // take first label before any comma
+                    .split(' ')
+                    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                    .join(' ');
+                nameField.style.transition  = 'border-color 0.3s';
+                nameField.style.borderColor = '#28a745';
+                setTimeout(() => nameField.style.borderColor = '', 1500);
+            }
+        }
+
+        document.getElementById('aiSuggestionCard').style.display = 'none';
+    }
+
+    // ── DISMISS SUGGESTION ────────────────────────────────────────────────────
+    function dismissAISuggestion() {
+        document.getElementById('aiSuggestionCard').style.display = 'none';
+        aiSuggestedCategory = null;
+        aiSuggestedName     = null;
+    }
+
+    // ── ENABLE SCAN BUTTON WHEN IMAGE IS LOADED ───────────────────────────────
+    document.getElementById('itemImage').addEventListener('change', () => {
+        // Re-enable scan button when new image is picked (model may already be ready)
+        setTimeout(() => {
+            if (mobileNetModel) {
+                document.getElementById('aiScanBtn').disabled = false;
+            }
+        }, 300);
+        // Hide old suggestion
+        document.getElementById('aiSuggestionCard').style.display = 'none';
+    });
+
+    // Init Lucide icons
+    document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+    </script>
+
+
+    <script>
+    // ── CAMERA / TAKE PHOTO ───────────────────────────────────────────────────
+    let cameraStream   = null;
+    let capturedBlob   = null;
+    let autoScanAfter  = false; // set true when "Take Photo & Scan" triggers this
+
+    function openCamera(autoScan = false) {
+        autoScanAfter = autoScan;
+        const modal = document.getElementById('cameraModal');
+        const video = document.getElementById('cameraVideo');
+        const err   = document.getElementById('cameraError');
+        err.style.display = 'none';
+        document.getElementById('captureBtn').style.display  = 'flex';
+        document.getElementById('retakeBtn').style.display   = 'none';
+        document.getElementById('useCaptureBtn').style.display = 'none';
+        modal.classList.add('open');
+        lucide.createIcons();
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+            .then(stream => {
+                cameraStream  = stream;
+                video.srcObject = stream;
+            })
+            .catch(e => {
+                err.style.display = 'block';
+                err.textContent   = 'Camera access denied or unavailable. Please allow camera permission and try again.';
+                console.error('Camera error:', e);
+            });
+    }
+
+    function closeCamera() {
+        if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+        document.getElementById('cameraModal').classList.remove('open');
+        document.getElementById('cameraVideo').srcObject = null;
+        autoScanAfter = false;
+    }
+
+    function capturePhoto() {
+        const video  = document.getElementById('cameraVideo');
+        const canvas = document.getElementById('cameraCanvas');
+        canvas.width  = video.videoWidth  || 640;
+        canvas.height = video.videoHeight || 480;
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Show retake / use buttons
+        document.getElementById('captureBtn').style.display    = 'none';
+        document.getElementById('retakeBtn').style.display     = 'flex';
+        document.getElementById('useCaptureBtn').style.display = 'flex';
+
+        // Freeze video by stopping stream
+        if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+
+        // Store blob
+        canvas.toBlob(blob => { capturedBlob = blob; }, 'image/jpeg', 0.92);
+        lucide.createIcons();
+    }
+
+    function retakePhoto() {
+        capturedBlob = null;
+        document.getElementById('captureBtn').style.display    = 'flex';
+        document.getElementById('retakeBtn').style.display     = 'none';
+        document.getElementById('useCaptureBtn').style.display = 'none';
+        // Restart stream
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+            .then(stream => {
+                cameraStream = stream;
+                document.getElementById('cameraVideo').srcObject = stream;
+            });
+        lucide.createIcons();
+    }
+
+    function useCapture() {
+        if (!capturedBlob) return;
+        const canvas  = document.getElementById('cameraCanvas');
+        const preview = document.getElementById('previewImage');
+        const imgPrev = document.getElementById('imagePreview');
+
+        // Show preview
+        const url       = URL.createObjectURL(capturedBlob);
+        preview.src     = url;
+        imgPrev.style.display = 'block';
+
+        // Inject into the file input as a real File so it submits with the form
+        const file = new File([capturedBlob], 'camera-photo.jpg', { type: 'image/jpeg' });
+        const dt   = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('itemImage').files = dt.files;
+
+        closeCamera();
+
+        // Enable scan button
+        if (mobileNetModel) document.getElementById('aiScanBtn').disabled = false;
+
+        // Auto-scan if triggered by "Take Photo & Scan"
+        if (autoScanAfter) {
+            setTimeout(() => runAIScan(), 400);
+        }
+    }
+
+    // "Take Photo & Scan" — opens camera then auto-runs scan after capture
+    function openCameraAndScan() {
+        openCamera(true);
+    }
+
+    // Close modal if clicking the dark backdrop
+    document.getElementById('cameraModal').addEventListener('click', function(e) {
+        if (e.target === this) closeCamera();
+    });
+    </script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // ── FLOOR SELECTOR ────────────────────────────────────────────────
+        const floorInput = document.getElementById('pinFloor');
+
+        window.setFloor = function(val) {
+            floorInput.value = val;
+            ['floorLbl0','floorLbl1','floorLbl2'].forEach(id => {
+                document.getElementById(id).classList.remove('active-floor');
+            });
+            const idx = val === '' ? 0 : val === '1' ? 1 : 2;
+            document.getElementById('floorLbl' + idx).classList.add('active-floor');
+        };
+
+        // ── LEAFLET PIN PICKER ────────────────────────────────────────────
+        // Centred on Old Mill High School, 600 Patriot Ln, Millersville MD
+        const SCHOOL_LAT = 39.1232, SCHOOL_LNG = -76.6286;
+
+        const map = L.map('map-picker', { zoomControl: true }).setView([SCHOOL_LAT, SCHOOL_LNG], 18);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 21
+        }).addTo(map);
+
+        // Custom blue marker
+        const pinIcon = L.divIcon({
+            className: '',
+            html: `<div style="width:22px;height:22px;background:linear-gradient(135deg,#0066cc,#cc0000);
+                   border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid white;
+                   box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>`,
+            iconSize: [22, 22],
+            iconAnchor: [11, 22]
+        });
+
+        let marker = null;
+        const latInput  = document.getElementById('pinLat');
+        const lngInput  = document.getElementById('pinLng');
+        const pinNote   = document.getElementById('mapPinNote');
+        const mapEl     = document.getElementById('map-picker');
+
+        map.on('click', function(e) {
+            const { lat, lng } = e.latlng;
+            latInput.value = lat.toFixed(7);
+            lngInput.value = lng.toFixed(7);
+
+            if (marker) { marker.setLatLng(e.latlng); }
+            else { marker = L.marker(e.latlng, { icon: pinIcon, draggable: true }).addTo(map); }
+
+            marker.on('dragend', function() {
+                const p = marker.getLatLng();
+                latInput.value = p.lat.toFixed(7);
+                lngInput.value = p.lng.toFixed(7);
+                pinNote.textContent = `📍 Pinned at ${p.lat.toFixed(5)}, ${p.lng.toFixed(5)} — drag to adjust`;
+            });
+
+            mapEl.classList.add('has-pin');
+            pinNote.textContent = `📍 Pinned at ${lat.toFixed(5)}, ${lng.toFixed(5)} — drag to adjust`;
+            pinNote.classList.add('selected');
+        });
+    </script>
+</body>
+</html>

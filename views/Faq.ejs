@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Lost But Found</title>
+    <link rel="icon" type="image/png" href="/images/Favicon.png">
+    <link rel="stylesheet" href="/styles.css">
+    <style>
+        .faq-container { max-width: 800px; margin: 80px auto 40px; padding: 0 20px; }
+        .faq-header { text-align: center; margin-bottom: 50px; }
+        .faq-header h1 { font-size: 2.5em; margin-bottom: 15px; }
+        .faq-header p { font-size: 1.1em; color: #666; }
+        .faq-item { background: white; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .faq-question { padding: 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border-radius: 8px; transition: all 0.3s; }
+        .faq-question:hover { background: #f0f2ff; }
+        .faq-question h3 { margin: 0; color: #333; font-size: 1.05em; }
+        .faq-toggle { font-size: 1.5em; color: #0066cc; transition: transform 0.3s; }
+        .faq-answer { padding: 0 20px; max-height: 0; overflow: hidden; transition: all 0.3s ease; }
+        .faq-answer.show { padding: 20px; max-height: 1000px; }
+        .faq-answer p { color: #666; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+   <nav id="nav-bar" class="transparent">
+    <div class="nav-left">
+        <a href="/" class="nav-logo">
+            <img src="/images/Home-logo.png" alt="Lost But Found" width="48" height="48">
+        </a>
+        <a href="/uploadItem">Submit Item</a>
+        <a href="/browse">Browse Items</a>
+        <a href="/claim">Claim Item</a>
+    </div>
+    <div class="nav-right">
+        <a href="/account" class="nav-auth">My Account</a>
+        <a href="/register" class="nav-auth">Register</a>
+        <a href="/login" class="nav-auth">Login</a>
+        <a href="/admin/login" class="nav-auth">Admin</a>
+    </div>
+    <button class="hamburger-menu" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="/">Home</a>
+    <a href="/uploadItem">Submit Item</a>
+    <a href="/browse">Browse Items</a>
+    <a href="/claim">Claim Item</a>
+    <a href="/account" class="nav-auth">My Account</a>
+    <a href="/register" class="nav-auth">Register</a>
+    <a href="/login" class="nav-auth">Login</a>
+    <a href="/admin/login" class="nav-auth">Admin</a>
+</div>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="/">Home</a>
+        <a href="/uploadItem">Submit Item</a>
+        <a href="/browse">Browse Items</a>
+        <a href="/claim">Claim Item</a>
+        <a href="/register" class="nav-auth">Register</a>
+        <a href="/login" class="nav-auth">Login</a>
+        <a href="/admin/login" class="nav-auth">Admin</a>
+    </div>
+    
+
+    <main>
+        <div class="faq-container">
+            <div class="faq-header">
+                <h1>Frequently Asked Questions</h1>
+                <p>Find answers to common questions about Lost But Found</p>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <h3>How do I report a found item?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Simply click "Submit Item" in the navigation, fill out the form with details about the item you found, and upload a photo if possible. Our team will review your submission within 1-2 hours.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <h3>How do I claim a lost item?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Browse the available items and when you find yours, click "Claim Item". You'll need to provide proof of ownership. Contact the person who found it to complete the process.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <h3>Is my personal information safe?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Yes, we take privacy seriously. Your information is encrypted and only shared with the relevant parties for item recovery. Read our Privacy Policy for more details.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <h3>What items can I submit?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>You can submit most items found on campus including electronics, clothing, documents, keys, books, and more. Items must be found on campus property.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <h3>How long are items kept?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Items are kept in the system for 90 days. If not claimed within this period, they may be donated or discarded according to campus policy.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <h3>Do I need to register to use the platform?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>You'll need to register to claim items. Registration is free and takes just a minute. You can browse items without registering.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <h3>What if I can't find my item?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Contact us through the Contact form or visit your campus's Lost & Found office. They may have items not yet listed on our platform.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>Lost But Found</h3>
+                <p class="footer-description">Helping reunite people with their lost belongings through a simple and secure platform.</p>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="/"><img src="/images/Home-logo.png" alt="Lost But Found" width="48" height="48"></a>
+                    <li><a href="/browse">Browse Items</a></li>
+                    <li><a href="/upload">Submit Item</a></li>
+                    <li><a href="/claim">Claim Item</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>User</h3>
+                <ul class="footer-links">
+                    <li><a href="/register">Register</a></li>
+                    <li><a href="/login">Login</a></li>
+                    <li><a href="/faq">FAQ</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Admin</h3>
+                <ul class="footer-links">
+                    <li><a href="/admin/login">Admin Login</a></li>
+                    <li><a href="/faq">Support</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-copyright">&copy; 2025 Lost But Found. All rights reserved.</div>
+            <div class="footer-legal">
+                <div class="footer-legal-text">
+                    By using this platform, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                </div>
+            </div>
+            <div class="footer-bottom-links">
+                <a href="#">Terms</a>
+                <span class="divider">|</span>
+                <a href="#">Privacy</a>
+                <span class="divider">|</span>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleFAQ(element) {
+            const answer = element.nextElementSibling;
+            const toggle = element.querySelector('.faq-toggle');
+            
+            answer.classList.toggle('show');
+            toggle.textContent = answer.classList.contains('show') ? '−' : '+';
+        }
+
+    </script>
+    <script>
+        // Navbar scroll effect
+
+        // Hamburger menu toggle
+        const hamburgerBtn = document.getElementById("hamburgerBtn");
+        const mobileMenu = document.getElementById("mobileMenu");
+
+        if (hamburgerBtn) {
+            hamburgerBtn.addEventListener("click", () => {
+                hamburgerBtn.classList.toggle("active");
+                mobileMenu.classList.toggle("active");
+            });
+
+            mobileMenu.querySelectorAll("a").forEach(link => {
+                link.addEventListener("click", () => {
+                    hamburgerBtn.classList.remove("active");
+                    mobileMenu.classList.remove("active");
+                });
+            });
+        }
+    </script>
+</body>
+</html>

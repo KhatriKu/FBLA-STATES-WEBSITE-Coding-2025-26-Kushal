@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title><%= pageTitle %></title>
+    <link rel="icon" type="image/png" href="/images/Favicon.png">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <!--      -->
+    <!-- Navigation -->
+    <nav id="nav-bar" class="transparent">
+    <div class="nav-left">
+        <a href="/" class="nav-logo">
+            <img src="/images/Home-logo.png" alt="Lost But Found" width="48" height="48">
+        </a>
+        <a href="/uploadItem">Submit Item</a>
+        <a href="/browse">Browse Items</a>
+        <a href="/claim">Claim Item</a>
+    </div>
+    <div class="nav-right">
+        <a href="/account" class="nav-auth">My Account</a>
+        <a href="/register" class="nav-auth">Register</a>
+        <a href="/login" class="nav-auth">Login</a>
+        <a href="/admin/login" class="nav-auth">Admin</a>
+    </div>
+    <button class="hamburger-menu" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="/">Home</a>
+    <a href="/uploadItem">Submit Item</a>
+    <a href="/browse">Browse Items</a>
+    <a href="/claim">Claim Item</a>
+    <a href="/account" class="nav-auth">My Account</a>
+    <a href="/register" class="nav-auth">Register</a>
+    <a href="/login" class="nav-auth">Login</a>
+    <a href="/admin/login" class="nav-auth">Admin</a>
+    <a href="/admin/data" style="color: #0066cc; font-weight: bold;">View All Data</a>
+</div>
+
+    <!-- Admin Dashboard Content -->
+    <section class="section" style="padding-top: 100px;">
+        <div class="container">
+            <h1 style="text-align: center; margin-bottom: 20px;">Admin Dashboard</h1>
+
+            <div id="statusMessage" class="status-message"></div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-items">0</div>
+                    <div class="stat-label">Total Items</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="active-items">0</div>
+                    <div class="stat-label">Active Items</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="claims-submitted">0</div>
+                    <div class="stat-label">Claims Submitted</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="items-returned">0</div>
+                    <div class="stat-label">Items Returned</div>
+                </div>
+            </div>
+
+            <!-- Items Table -->
+            <div class="table-container">
+                <h2>All Items</h2>
+
+                <div class="filter-section">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="status-filter">Status:</label>
+                            <select id="status-filter">
+                                <option value="">All Statuses</option>
+                                <option value="active">Active</option>
+                                <option value="claimed">Claimed</option>
+                                <option value="returned">Returned</option>
+                                <option value="pending">Pending Approval</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="search-filter">Search:</label>
+                            <input type="text" id="search-filter" placeholder="Search items...">
+                        </div>
+                        <div class="filter-group">
+                            <label>&nbsp;</label>
+                            <button class="btn" id="apply-filters">Apply Filters</button>
+                            <button class="btn btn-secondary" id="reset-filters">Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <table id="items-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Image</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Location Found</th>
+                            <th>Date Found</th>
+                            <th>Contact Info</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- Claims Table -->
+            <div class="table-container">
+                <h2>Recent Claim Requests</h2>
+                <table id="claims-table">
+                    <thead>
+                        <tr>
+                            <th>Claim ID</th>
+                            <th>Item ID</th>
+                            <th>Item Name</th>
+                            <th>Claimant Name</th>
+                            <th>Contact Info</th>
+                            <th>Submitted</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="claims-tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h2>Quick Actions</h2>
+                <button class="btn btn-primary" id="add-item">Add New Item</button>
+                <button class="btn btn-info" id="refresh-data">Refresh Data</button>
+            </div>
+
+            <!-- System Info -->
+            <div class="system-info">
+                <p><strong>System Status:</strong> <span id="system-status">Online</span></p>
+                <p><strong>Last Updated:</strong> <span id="current-time"></span></p>
+                <p><strong>Database Items:</strong> <span id="db-item-count">0</span> records</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="background: #333; color: white; padding: 40px 20px; text-align: center;">
+        <div class="container">
+            <p>&copy; 2025 FBLA Lost But Found Project. All rights reserved.</p>
+            <p style="margin-top: 10px; opacity: 0.8;">Admin Dashboard</p>
+        </div>
+    </footer>
+
+    <script>
+        // Listen for scroll events
+    window.addEventListener('scroll', () => {
+        // Get the navbar element
+        const navbar = document.getElementById('nav-bar');
+        
+        // Check if page is scrolled down 50 pixels or more
+        if (window.scrollY > 50) {
+            // If yes, remove the 'transparent' class
+            navbar.classList.remove('transparent');
+        } else {
+            // If no (at top), add the 'transparent' class back
+            navbar.classList.add('transparent');
+        }
+    });
+        /**
+         * CHECK ADMIN AUTHENTICATION
+         * Verify user is logged in before showing dashboard
+         */
+        function checkAuth() {
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                window.location.href = '/admin/login';
+                return false;
+            }
+            return true;
+        }
+
+        /**
+         * LOGOUT FUNCTION
+         */
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('adminToken');
+                window.location.href = '/';
+            }
+        }
+
+        // Add logout button to nav dynamically
+        const logoutBtn = document.createElement('a');
+        logoutBtn.href = '#';
+        logoutBtn.className = 'nav-auth';
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.onclick = function(e) { e.preventDefault(); logout(); };
+        document.querySelector('.nav-right').appendChild(logoutBtn);
+
+        // Update time
+        function updateTime() {
+            document.getElementById('current-time').textContent = new Date().toLocaleString();
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // Load admin data
+        async function loadAdminData() {
+            const token = localStorage.getItem('adminToken');
+            
+            try {
+                const response = await fetch('/api/admin/data', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    localStorage.removeItem('adminToken');
+                    window.location.href = '/admin/login';
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('total-items').textContent = data.stats.totalItems || 0;
+                    document.getElementById('active-items').textContent = data.stats.activeItems || 0;
+                    document.getElementById('claims-submitted').textContent = data.stats.totalClaims || 0;
+                    document.getElementById('items-returned').textContent = data.stats.returnedItems || 0;
+                    document.getElementById('db-item-count').textContent = data.stats.totalItems || 0;
+
+                    populateItemsTable(data.items || []);
+                    populateClaimsTable(data.claims || []);
+
+                    showMessage('Dashboard data loaded successfully', 'success');
+                } else {
+                    showMessage('Failed to load dashboard data', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading admin data:', error);
+                showMessage('Network error loading dashboard data', 'error');
+            }
+        }
+
+        function populateItemsTable(items) {
+            const tbody = document.getElementById('items-tbody');
+            tbody.innerHTML = '';
+
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="no-data">No items found</td></tr>';
+                return;
+            }
+
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                let statusClass = 'status-pending';
+                let statusText = 'Pending';
+
+                if (item.status === 'active') {
+                    statusClass = 'status-active';
+                    statusText = 'Active';
+                } else if (item.status === 'claimed') {
+                    statusClass = 'status-claimed';
+                    statusText = 'Claimed';
+                } else if (item.status === 'returned') {
+                    statusClass = 'status-returned';
+                    statusText = 'Returned';
+                } else if (item.status === 'rejected') {
+                    statusClass = 'status-rejected';
+                    statusText = 'Rejected';
+                }
+
+                row.innerHTML = `
+                    <td>${item.id || 'N/A'}</td>
+                    <td>
+                        ${item.image_filename ?
+                            `<img src="/uploads/${item.image_filename}" alt="${item.item_name}" class="item-image">` :
+                            `<div class="no-image">No Image</div>`
+                        }
+                    </td>
+                    <td>${item.item_name || 'N/A'}</td>
+                    <td>${item.category || 'N/A'}</td>
+                    <td>${item.location || 'N/A'}</td>
+                    <td>${item.date_found || 'N/A'}</td>
+                    <td>${item.contact_number || 'N/A'}</td>
+                    <td><span class="status ${statusClass}">${statusText}</span></td>
+                    <td>${item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            ${item.status === 'pending' ?
+                                `<button class="btn btn-success" onclick="updateItemStatus(${item.id}, 'active')">Approve</button>
+                                 <button class="btn btn-danger" onclick="updateItemStatus(${item.id}, 'rejected')">Reject</button>` :
+                                ''
+                            }
+                            ${item.status === 'active' ?
+                                `<button class="btn btn-info" onclick="updateItemStatus(${item.id}, 'claimed')">Mark Claimed</button>` :
+                                ''
+                            }
+                            ${item.status === 'claimed' ?
+                                `<button class="btn btn-success" onclick="updateItemStatus(${item.id}, 'returned')">Mark Returned</button>` :
+                                ''
+                            }
+                            <button class="btn btn-danger" onclick="deleteItem(${item.id})">Delete</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function populateClaimsTable(claims) {
+            const tbody = document.getElementById('claims-tbody');
+            tbody.innerHTML = '';
+
+            if (claims.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="no-data">No claims found</td></tr>';
+                return;
+            }
+
+            claims.forEach(claim => {
+                const row = document.createElement('tr');
+                let statusClass = 'status-pending';
+                let statusText = 'Pending';
+
+                if (claim.status === 'approved') {
+                    statusClass = 'status-active';
+                    statusText = 'Approved';
+                } else if (claim.status === 'denied') {
+                    statusClass = 'status-rejected';
+                    statusText = 'Denied';
+                }
+
+                row.innerHTML = `
+                    <td>#CL${String(claim.id).padStart(3, '0')}</td>
+                    <td>${claim.item_id || 'N/A'}</td>
+                    <td>${claim.item_name || 'N/A'}</td>
+                    <td>${claim.claimant_name || 'N/A'}</td>
+                    <td>${claim.claimant_contact || 'N/A'}</td>
+                    <td>${claim.submitted_at ? new Date(claim.submitted_at).toLocaleDateString() : 'N/A'}</td>
+                    <td><span class="status ${statusClass}">${statusText}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            ${claim.status === 'pending' ?
+                                `<button class="btn btn-success" onclick="updateClaimStatus(${claim.id}, 'approved')">Approve</button>
+                                 <button class="btn btn-danger" onclick="updateClaimStatus(${claim.id}, 'denied')">Deny</button>` :
+                                ''
+                            }
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function updateItemStatus(itemId, newStatus) {
+            const token = localStorage.getItem('adminToken');
+            
+            if (!confirm(`Are you sure you want to change this item's status to ${newStatus}?`)) return;
+
+            try {
+                const response = await fetch(`/api/admin/items/${itemId}/status`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage(`Item status updated to ${newStatus}`, 'success');
+                    loadAdminData();
+                } else {
+                    showMessage(`Failed to update item status: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating item status:', error);
+                showMessage('Network error updating item status', 'error');
+            }
+        }
+
+        async function updateClaimStatus(claimId, newStatus) {
+            const token = localStorage.getItem('adminToken');
+            
+            if (!confirm(`Are you sure you want to ${newStatus} this claim?`)) return;
+
+            try {
+                const response = await fetch(`/api/admin/claims/${claimId}/status`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage(`Claim ${newStatus} successfully`, 'success');
+                    loadAdminData();
+                } else {
+                    showMessage(`Failed to update claim: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating claim status:', error);
+                showMessage('Network error updating claim status', 'error');
+            }
+        }
+
+        async function deleteItem(itemId) {
+            const token = localStorage.getItem('adminToken');
+            
+            if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) return;
+
+            try {
+                const response = await fetch(`/api/admin/items/${itemId}`, { 
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Item deleted successfully', 'success');
+                    loadAdminData();
+                } else {
+                    showMessage(`Failed to delete item: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                showMessage('Network error deleting item', 'error');
+            }
+        }
+
+        document.getElementById('add-item').addEventListener('click', () => {
+            window.location.href = '/upload';
+        });
+
+        document.getElementById('refresh-data').addEventListener('click', () => {
+            loadAdminData();
+        });
+
+        document.getElementById('apply-filters').addEventListener('click', () => {
+            const statusFilter = document.getElementById('status-filter').value;
+            const searchFilter = document.getElementById('search-filter').value.toLowerCase();
+
+            const rows = document.querySelectorAll('#items-tbody tr');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                if (row.querySelector('.no-data')) return;
+
+                const status = row.querySelector('.status')?.textContent.toLowerCase() || '';
+                const itemName = row.cells[2]?.textContent.toLowerCase() || '';
+                const category = row.cells[3]?.textContent.toLowerCase() || '';
+                const location = row.cells[4]?.textContent.toLowerCase() || '';
+
+                let shouldShow = true;
+                if (statusFilter && status !== statusFilter.toLowerCase()) shouldShow = false;
+                if (searchFilter && !itemName.includes(searchFilter) && !category.includes(searchFilter) && !location.includes(searchFilter)) shouldShow = false;
+
+                row.style.display = shouldShow ? '' : 'none';
+                if (shouldShow) visibleCount++;
+            });
+
+            showMessage(`Showing ${visibleCount} items`, 'success');
+        });
+
+        document.getElementById('reset-filters').addEventListener('click', () => {
+            document.getElementById('status-filter').value = '';
+            document.getElementById('search-filter').value = '';
+            const rows = document.querySelectorAll('#items-tbody tr');
+            rows.forEach(row => row.style.display = '');
+            showMessage('Filters reset', 'success');
+        });
+
+        function showMessage(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.style.display = 'block';
+            setTimeout(() => { statusDiv.style.display = 'none'; }, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (checkAuth()) {
+                loadAdminData();
+            }
+        });
+    </script>
+</body>
+</html>

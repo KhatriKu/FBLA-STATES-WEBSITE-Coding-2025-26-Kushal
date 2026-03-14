@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Browse Items - Lost But Found</title>
+    <link rel="icon" type="image/png" href="/images/Favicon.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+    /* ── BROWSE CONTAINER ──────────────────────────────────────────────── */
+    .browse-container { max-width: 1400px; margin: 80px auto 40px; padding: 0 20px; }
+    .browse-header { text-align: center; margin-bottom: 30px; }
+    .browse-header h1 { font-size: 2.5em; margin-bottom: 10px; }
+
+    /* ── FILTERS ───────────────────────────────────────────────────────── */
+    .browse-filters {
+        background: white; padding: 22px 24px;
+        border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        margin-bottom: 28px;
+    }
+    .filter-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+    .filter-grid input, .filter-grid select {
+        padding: 10px 12px; border: 1.5px solid #e0e0e0;
+        border-radius: 6px; font-family: inherit; font-size: 0.9em;
+        transition: border-color 0.2s;
+    }
+    .filter-grid input:focus, .filter-grid select:focus {
+        outline: none; border-color: #0066cc;
+    }
+    .filter-actions { display: flex; gap: 10px; margin-top: 12px; }
+    .filter-actions .btn { padding: 10px 22px; font-size: 0.9em; }
+    .results-info { margin-bottom: 14px; color: #666; font-size: 0.9em; }
+
+    /* View toggle */
+    .view-toggle { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; justify-content: flex-end; }
+    .view-btn {
+        padding: 7px 16px; border-radius: 6px; border: 1.5px solid #ddd;
+        background: white; color: #666; font-size: 0.85em; cursor: pointer;
+        font-family: inherit; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+    }
+    .view-btn.active { border-color: #0066cc; background: #0066cc; color: white; }
+
+    /* ── CORK BOARD ────────────────────────────────────────────────────── */
+    #corkBoard {
+        position: relative;
+        width: 100%;
+        min-height: 680px;
+        background:
+            repeating-linear-gradient(0deg,   transparent, transparent 28px, rgba(0,0,0,0.03) 28px, rgba(0,0,0,0.03) 29px),
+            repeating-linear-gradient(90deg,  transparent, transparent 28px, rgba(0,0,0,0.03) 28px, rgba(0,0,0,0.03) 29px),
+            linear-gradient(135deg, #c8914a 0%, #b87d3a 40%, #c8914a 70%, #a06828 100%);
+        border-radius: 12px;
+        border: 6px solid #8B5E3C;
+        box-shadow: inset 0 0 60px rgba(0,0,0,0.25), 0 8px 32px rgba(0,0,0,0.2);
+        overflow: hidden;
+        margin-bottom: 40px;
+    }
+
+    /* ── FLOATING CARD (unclicked) ─────────────────────────────────────── */
+    .cork-card {
+        position: absolute;
+        width: 160px;
+        cursor: pointer;
+        user-select: none;
+        transform-origin: center center;
+        transition: box-shadow 0.2s;
+        z-index: 2;
+    }
+    .cork-card:hover { z-index: 20; }
+    .cork-card:hover .card-paper { box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
+
+    .card-paper {
+        background: white;
+        border-radius: 4px;
+        box-shadow: 3px 4px 14px rgba(0,0,0,0.28);
+        overflow: hidden;
+        transition: box-shadow 0.25s;
+    }
+    .card-img {
+        width: 100%; height: 110px;
+        object-fit: cover; display: block;
+    }
+    .card-no-img {
+        width: 100%; height: 110px;
+        background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+        display: flex; align-items: center; justify-content: center;
+        color: #bbb; font-size: 1.8em;
+    }
+    .card-info {
+        padding: 8px 10px 10px;
+    }
+    .card-name {
+        font-size: 0.75em; font-weight: 700; color: #222;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        margin-bottom: 3px;
+    }
+    .card-cat {
+        font-size: 0.65em; color: #0066cc; font-weight: 600;
+        text-transform: uppercase; letter-spacing: .04em;
+    }
+    .card-status-dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        display: inline-block; margin-right: 4px;
+    }
+    .card-status-dot.active  { background: #28a745; }
+    .card-status-dot.claimed { background: #f0a500; }
+    .card-status-dot.pending { background: #6c757d; }
+
+    /* ── PUSH PIN ──────────────────────────────────────────────────────── */
+    .push-pin {
+        position: absolute;
+        top: -13px; left: 50%; transform: translateX(-50%);
+        width: 18px; height: 18px;
+        z-index: 10;
+        pointer-events: none;
+        opacity: 0; /* hidden until pinned */
+        transition: opacity 0.1s;
+    }
+    .push-pin .pin-head {
+        width: 14px; height: 14px; border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #ff6b6b, #cc0000);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        margin: 0 auto;
+    }
+    .push-pin .pin-needle {
+        width: 2px; height: 10px;
+        background: linear-gradient(to bottom, #aaa, #666);
+        margin: 0 auto;
+        border-radius: 0 0 2px 2px;
+    }
+
+    /* Pin drop animation */
+    @keyframes pinDrop {
+        0%   { transform: translateX(-50%) translateY(-30px) rotate(-15deg); opacity: 0; }
+        60%  { transform: translateX(-50%) translateY(3px) rotate(2deg); opacity: 1; }
+        80%  { transform: translateX(-50%) translateY(-4px) rotate(-1deg); }
+        100% { transform: translateX(-50%) translateY(0) rotate(0deg); opacity: 1; }
+    }
+    .push-pin.dropping { animation: pinDrop 0.45s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .push-pin.pinned   { opacity: 1; }
+
+    /* String from pin to card corners */
+    .pin-string {
+        position: absolute;
+        top: 0; left: 50%;
+        width: 1px; height: 0;
+        background: rgba(120,80,40,0.55);
+        transform-origin: top center;
+        pointer-events: none;
+        transition: height 0.3s ease;
+        z-index: 1;
+    }
+
+    /* Pinned card — stops drifting, slight tilt */
+    .cork-card.pinned {
+        animation: none !important;
+        cursor: pointer;
+    }
+    .cork-card.pinned .card-paper {
+        box-shadow: 4px 6px 18px rgba(0,0,0,0.35);
+    }
+
+    /* ── DETAIL MODAL ──────────────────────────────────────────────────── */
+    #detailOverlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.55);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        align-items: center; justify-content: center;
+    }
+    #detailOverlay.open { display: flex; }
+
+    #detailModal {
+        background: white;
+        border-radius: 14px;
+        width: min(680px, 94vw);
+        max-height: 88vh;
+        overflow-y: auto;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+        animation: modalIn 0.35s cubic-bezier(0.22,1,0.36,1);
+        position: relative;
+    }
+    @keyframes modalIn {
+        from { transform: scale(0.82) translateY(30px); opacity: 0; }
+        to   { transform: scale(1)    translateY(0);    opacity: 1; }
+    }
+
+    .modal-img {
+        width: 100%; height: 280px; object-fit: cover;
+        border-radius: 14px 14px 0 0; display: block;
+    }
+    .modal-no-img {
+        width: 100%; height: 200px;
+        background: linear-gradient(135deg, #f0f0f0, #e4e4e4);
+        border-radius: 14px 14px 0 0;
+        display: flex; align-items: center; justify-content: center;
+        color: #ccc; font-size: 3em;
+    }
+    .modal-body { padding: 26px 28px 28px; }
+    .modal-category {
+        font-size: 0.78em; font-weight: 700; letter-spacing: .08em;
+        text-transform: uppercase; color: #0066cc; margin-bottom: 8px;
+    }
+    .modal-title {
+        font-size: 1.6em; font-weight: 800; color: #111; margin-bottom: 16px; line-height: 1.2;
+    }
+    .modal-meta {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;
+    }
+    .modal-meta-item { display: flex; flex-direction: column; gap: 3px; }
+    .modal-meta-label { font-size: 0.73em; color: #999; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+    .modal-meta-value { font-size: 0.92em; color: #333; font-weight: 500; }
+    .modal-desc {
+        background: #f8f9fb; border-radius: 8px; padding: 14px 16px;
+        font-size: 0.9em; color: #444; line-height: 1.7; margin-bottom: 20px;
+    }
+    .modal-status-bar {
+        display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+        padding: 10px 14px; border-radius: 8px;
+        border: 1.5px solid;
+    }
+    .modal-status-bar.active  { background: #edfbf0; border-color: #28a745; color: #155724; }
+    .modal-status-bar.claimed { background: #fff8e6; border-color: #f0a500; color: #7d5a00; }
+    .modal-status-bar.pending { background: #f5f5f5; border-color: #ccc;    color: #555; }
+    .modal-actions { display: flex; gap: 12px; }
+    .modal-actions .btn { flex: 1; padding: 12px; font-size: 0.95em; text-align: center; }
+    .modal-close {
+        position: absolute; top: 14px; right: 14px;
+        width: 34px; height: 34px; border-radius: 50%;
+        background: rgba(0,0,0,0.45); color: white; border: none;
+        font-size: 1em; cursor: pointer; display: flex;
+        align-items: center; justify-content: center;
+        transition: background 0.2s; z-index: 10;
+    }
+    .modal-close:hover { background: rgba(0,0,0,0.7); }
+
+    /* ── LIST VIEW (fallback) ──────────────────────────────────────────── */
+    #listView { display: none; }
+    .list-item-card {
+        display: flex; gap: 16px; align-items: flex-start;
+        background: white; border-radius: 10px; padding: 16px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 14px;
+        cursor: pointer; transition: box-shadow 0.2s;
+    }
+    .list-item-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.14); }
+    .list-item-img { width: 90px; height: 90px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+    .list-item-noimg { width: 90px; height: 90px; border-radius: 8px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 1.6em; flex-shrink: 0; }
+    .list-item-info { flex: 1; }
+    .list-item-name { font-weight: 700; font-size: 1em; color: #222; margin-bottom: 4px; }
+    .list-item-cat  { font-size: 0.78em; color: #0066cc; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+    .list-item-meta { font-size: 0.83em; color: #666; display: flex; gap: 14px; flex-wrap: wrap; }
+
+    #noItems { text-align: center; padding: 40px; color: #999; display: none; }
+
+    @media (max-width: 768px) {
+        .filter-grid { grid-template-columns: 1fr 1fr; }
+        .modal-meta  { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+        .filter-grid { grid-template-columns: 1fr; }
+        #corkBoard   { min-height: 500px; }
+        .cork-card   { width: 130px; }
+        .card-img    { height: 90px; }
+    }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="nav-bar" class="transparent">
+        <div class="nav-left">
+            <a href="/" class="nav-logo">
+                <img src="/images/Home-logo.png" alt="Lost But Found" width="48" height="48">
+            </a>
+            <a href="/uploadItem">Submit Item</a>
+            <a href="/browse">Browse Items</a>
+            <a href="/claim">Claim Item</a>
+        </div>
+        <div class="nav-right">
+            <a href="/account" class="nav-auth">My Account</a>
+            <a href="/register" class="nav-auth">Register</a>
+            <a href="/login" class="nav-auth">Login</a>
+            <a href="/admin/login" class="nav-auth">Admin</a>
+        </div>
+        <button class="hamburger-menu" id="hamburgerBtn" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="/">Home</a>
+        <a href="/uploadItem">Submit Item</a>
+        <a href="/browse">Browse Items</a>
+        <a href="/claim">Claim Item</a>
+        <a href="/account" class="nav-auth">My Account</a>
+        <a href="/register" class="nav-auth">Register</a>
+        <a href="/login" class="nav-auth">Login</a>
+        <a href="/admin/login" class="nav-auth">Admin</a>
+    </div>
+
+    <main>
+        <div class="browse-container">
+            <div class="browse-header">
+                <h1>Browse Found Items</h1>
+                <p>Search for your lost belongings — click a card to pin it</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="browse-filters">
+                <div class="filter-grid">
+                    <input type="text" id="searchInput" placeholder="Search by name or description...">
+                    <select id="categoryFilter"><option value="">All Categories</option></select>
+                    <select id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="active">Available</option>
+                        <option value="pending">Pending</option>
+                        <option value="claimed">Claimed</option>
+                    </select>
+                    <input type="date" id="dateFilter">
+                </div>
+                <div class="filter-actions">
+                    <button class="btn btn-primary" onclick="applyFilters()">
+                        <i class="fa-solid fa-magnifying-glass"></i> Search
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+                </div>
+            </div>
+
+            <!-- View toggle + count -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                <div class="results-info">Showing <strong id="itemCount">0</strong> items</div>
+                <div class="view-toggle">
+                    <button class="view-btn active" id="btnCork" onclick="setView('cork')">
+                        <i class="fa-solid fa-thumbtack"></i> Cork Board
+                    </button>
+                    <button class="view-btn" id="btnList" onclick="setView('list')">
+                        <i class="fa-solid fa-list"></i> List
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cork Board -->
+            <div id="corkBoard"></div>
+
+            <!-- List View -->
+            <div id="listView"></div>
+
+            <div id="noItems">
+                <i class="fa-solid fa-box-open" style="font-size:2.5em;color:#ddd;display:block;margin-bottom:12px;"></i>
+                <p style="font-size:1.1em;">No items found. Try adjusting your filters.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Detail Modal -->
+    <div id="detailOverlay">
+        <div id="detailModal">
+            <button class="modal-close" onclick="closeDetail()" aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>Lost But Found</h3>
+                <p class="footer-description">Helping reunite people with their lost belongings through a simple and secure platform.</p>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/browse">Browse Items</a></li>
+                    <li><a href="/upload">Submit Item</a></li>
+                    <li><a href="/claim">Claim Item</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>User</h3>
+                <ul class="footer-links">
+                    <li><a href="/register">Register</a></li>
+                    <li><a href="/login">Login</a></li>
+                    <li><a href="/faq">FAQ</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Admin</h3>
+                <ul class="footer-links">
+                    <li><a href="/admin/login">Admin Login</a></li>
+                    <li><a href="/faq">Support</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-copyright">&copy; 2025 Lost But Found. All rights reserved.</div>
+            <div class="footer-legal">
+                <div class="footer-legal-text">
+                    By using this platform, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                </div>
+            </div>
+            <div class="footer-bottom-links">
+                <a href="#">Terms</a><span class="divider">|</span>
+                <a href="#">Privacy</a><span class="divider">|</span>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    // ── STATE ──────────────────────────────────────────────────────────────────
+    let allItems     = [];
+    let displayedItems = [];
+    let currentView  = 'cork';
+    let cardStates   = {};  // { itemId: { pinned, x, y, rot, vx, vy, animId } }
+    let rafId        = null;
+
+    const CARD_W = 164, CARD_H = 178;
+
+    // ── CATEGORY LOADER ────────────────────────────────────────────────────────
+    async function loadCategories() {
+        try {
+            const res  = await fetch('/api/categories');
+            const data = await res.json();
+            if (data.success) {
+                const sel = document.getElementById('categoryFilter');
+                data.categories.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat.name; opt.textContent = cat.name;
+                    sel.appendChild(opt);
+                });
+            }
+        } catch(e) {}
+    }
+
+    // ── ITEMS LOADER ───────────────────────────────────────────────────────────
+    async function loadItems() {
+        try {
+            const res  = await fetch('/api/items');
+            const data = await res.json();
+            if (data.success) {
+                allItems = data.items || [];
+                displayItems(allItems);
+            }
+        } catch(e) { console.error('Load items error:', e); }
+    }
+
+    // ── DISPLAY DISPATCHER ─────────────────────────────────────────────────────
+    function displayItems(items) {
+        displayedItems = items;
+        document.getElementById('itemCount').textContent = items.length;
+        document.getElementById('noItems').style.display = items.length === 0 ? 'block' : 'none';
+        if (currentView === 'cork') buildCorkBoard(items);
+        else buildListView(items);
+    }
+
+    function setView(v) {
+        currentView = v;
+        document.getElementById('btnCork').classList.toggle('active', v === 'cork');
+        document.getElementById('btnList').classList.toggle('active', v === 'list');
+        document.getElementById('corkBoard').style.display = v === 'cork' ? 'block' : 'none';
+        document.getElementById('listView').style.display  = v === 'list'  ? 'block' : 'none';
+        if (v === 'cork') buildCorkBoard(displayedItems);
+        else              buildListView(displayedItems);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  CORK BOARD
+    // ══════════════════════════════════════════════════════════════════════════
+
+    function buildCorkBoard(items) {
+        cancelAnimationFrame(rafId);
+        cardStates = {};
+        const board = document.getElementById('corkBoard');
+        board.innerHTML = '';
+        if (!items.length) return;
+
+        const bw = board.clientWidth  || 900;
+        const bh = board.clientHeight || 680;
+
+        items.forEach((item, idx) => {
+            // Initial position — scatter across the board with margin
+            const margin = 20;
+            const x = margin + Math.random() * (bw - CARD_W - margin * 2);
+            const y = margin + Math.random() * (bh - CARD_H - margin * 2);
+            const rot = (Math.random() - 0.5) * 18; // -9 to +9 degrees
+            const speed = 0.4 + Math.random() * 0.5;
+            const angle = Math.random() * Math.PI * 2;
+
+            cardStates[item.id] = {
+                pinned: false,
+                x, y, rot,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                targetRot: rot,
+                wobbleT: Math.random() * Math.PI * 2  // wobble phase offset
+            };
+
+            // Build card element
+            const el = document.createElement('div');
+            el.className = 'cork-card';
+            el.id = 'card-' + item.id;
+            el.dataset.id = item.id;
+            el.style.left = x + 'px';
+            el.style.top  = y + 'px';
+            el.style.transform = `rotate(${rot}deg)`;
+            el.style.zIndex = 2 + idx;
+
+            const statusClass = item.status || 'active';
+            el.innerHTML = `
+                <div class="push-pin" id="pin-${item.id}">
+                    <div class="pin-head"></div>
+                    <div class="pin-needle"></div>
+                </div>
+                <div class="card-paper">
+                    ${item.imageUrl
+                        ? `<img class="card-img" src="${item.imageUrl}" alt="${item.name}" draggable="false">`
+                        : `<div class="card-no-img"><i class="fa-solid fa-box-open"></i></div>`}
+                    <div class="card-info">
+                        <div class="card-name">${item.name}</div>
+                        <div class="card-cat">
+                            <span class="card-status-dot ${statusClass}"></span>
+                            ${item.category || 'Other'}
+                        </div>
+                    </div>
+                </div>`;
+
+            el.addEventListener('click', () => onCardClick(item.id, item));
+            board.appendChild(el);
+        });
+
+        // Start animation loop
+        animateBoard();
+    }
+
+    // ── ANIMATION LOOP ─────────────────────────────────────────────────────────
+    function animateBoard() {
+        const board = document.getElementById('corkBoard');
+        if (!board) return;
+        const bw = board.clientWidth;
+        const bh = board.clientHeight;
+
+        Object.entries(cardStates).forEach(([id, s]) => {
+            if (s.pinned) return;
+            const el = document.getElementById('card-' + id);
+            if (!el) return;
+
+            // Move
+            s.x += s.vx;
+            s.y += s.vy;
+
+            // Bounce off walls
+            if (s.x <= 0)            { s.x = 0;            s.vx =  Math.abs(s.vx); }
+            if (s.x >= bw - CARD_W)  { s.x = bw - CARD_W;  s.vx = -Math.abs(s.vx); }
+            if (s.y <= 0)            { s.y = 0;             s.vy =  Math.abs(s.vy); }
+            if (s.y >= bh - CARD_H)  { s.y = bh - CARD_H;  s.vy = -Math.abs(s.vy); }
+
+            // Gentle wobble rotation
+            s.wobbleT += 0.018;
+            const rot = s.rot + Math.sin(s.wobbleT) * 2.5;
+
+            el.style.left      = s.x + 'px';
+            el.style.top       = s.y + 'px';
+            el.style.transform = `rotate(${rot}deg)`;
+        });
+
+        rafId = requestAnimationFrame(animateBoard);
+    }
+
+    // ── CARD CLICK → PIN ANIMATION ────────────────────────────────────────────
+    function onCardClick(id, item) {
+        const state = cardStates[id];
+        if (!state) return;
+
+        if (state.pinned) {
+            // Already pinned — open detail modal directly
+            openDetail(item);
+            return;
+        }
+
+        // Stop this card
+        state.pinned = true;
+        state.vx = 0; state.vy = 0;
+
+        const el  = document.getElementById('card-' + id);
+        const pin = document.getElementById('pin-' + id);
+
+        // Snap to a clean slight tilt
+        const finalRot = (Math.random() - 0.5) * 8;
+        el.style.transition = 'transform 0.3s ease, box-shadow 0.3s';
+        el.style.transform  = `rotate(${finalRot}deg)`;
+        el.style.zIndex     = 50;
+        el.classList.add('pinned');
+
+        // Pin drop animation
+        pin.classList.add('dropping');
+        pin.addEventListener('animationend', () => {
+            pin.classList.remove('dropping');
+            pin.classList.add('pinned');
+        }, { once: true });
+
+        // After pin settles, show "View Details" button on card
+        setTimeout(() => {
+            const info = el.querySelector('.card-info');
+            if (info && !info.querySelector('.card-view-btn')) {
+                const btn = document.createElement('button');
+                btn.className   = 'card-view-btn';
+                btn.textContent = 'View Details';
+                btn.style.cssText = `
+                    width:100%; margin-top:6px; padding:5px 8px;
+                    background: linear-gradient(135deg,#0066cc,#cc0000);
+                    color:white; border:none; border-radius:4px;
+                    font-size:0.72em; font-weight:700; cursor:pointer;
+                    font-family:inherit;`;
+                btn.onclick = (e) => { e.stopPropagation(); openDetail(item); };
+                info.appendChild(btn);
+            }
+            el.style.transition = '';
+        }, 500);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  DETAIL MODAL
+    // ══════════════════════════════════════════════════════════════════════════
+
+    function openDetail(item) {
+        const statusLabels = { active: 'Available', claimed: 'Claimed', pending: 'Pending Review', returned: 'Returned' };
+        const statusLabel  = statusLabels[item.status] || item.status || 'Unknown';
+        const dateStr      = item.dateFound ? new Date(item.dateFound).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }) : 'Unknown';
+        const statusBar    = item.status === 'active' ? 'active' : item.status === 'claimed' ? 'claimed' : 'pending';
+
+        document.getElementById('modalContent').innerHTML = `
+            ${item.imageUrl
+                ? `<img class="modal-img" src="${item.imageUrl}" alt="${item.name}">`
+                : `<div class="modal-no-img"><i class="fa-solid fa-box-open"></i></div>`}
+            <div class="modal-body">
+                <div class="modal-category">
+                    <i class="fa-solid fa-tag" style="margin-right:5px;"></i>${item.category || 'Other'}
+                </div>
+                <div class="modal-title">${item.name}</div>
+
+                <div class="modal-status-bar ${statusBar}">
+                    <i class="fa-solid fa-circle-dot"></i>
+                    <strong>${statusLabel}</strong>
+                    ${item.status === 'active' ? '— This item is available to claim' : ''}
+                </div>
+
+                <div class="modal-meta">
+                    <div class="modal-meta-item">
+                        <span class="modal-meta-label"><i class="fa-solid fa-location-dot"></i> Location Found</span>
+                        <span class="modal-meta-value">${item.location || 'Not specified'}</span>
+                    </div>
+                    <div class="modal-meta-item">
+                        <span class="modal-meta-label"><i class="fa-solid fa-calendar"></i> Date Found</span>
+                        <span class="modal-meta-value">${dateStr}</span>
+                    </div>
+                    <div class="modal-meta-item">
+                        <span class="modal-meta-label"><i class="fa-solid fa-user"></i> Found By</span>
+                        <span class="modal-meta-value">${item.contactName || 'Anonymous'}</span>
+                    </div>
+                    <div class="modal-meta-item">
+                        <span class="modal-meta-label"><i class="fa-solid fa-envelope"></i> Contact</span>
+                        <span class="modal-meta-value">${item.contactEmail || item.contactNumber || 'N/A'}</span>
+                    </div>
+                </div>
+
+                ${item.description ? `
+                <div class="modal-desc">
+                    <strong style="display:block;margin-bottom:6px;font-size:0.8em;text-transform:uppercase;letter-spacing:.05em;color:#999;">Description</strong>
+                    ${item.description}
+                </div>` : ''}
+
+                <div class="modal-actions">
+                    ${item.status === 'active'
+                        ? `<a href="/claim?itemId=${item.id}" class="btn btn-primary">
+                               <i class="fa-solid fa-hand-point-up"></i> Claim This Item
+                           </a>`
+                        : `<button class="btn btn-secondary" disabled>Not Available</button>`}
+                    <button class="btn btn-secondary" onclick="closeDetail()">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </button>
+                </div>
+            </div>`;
+
+        document.getElementById('detailOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDetail() {
+        document.getElementById('detailOverlay').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    // Close on backdrop click
+    document.getElementById('detailOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeDetail();
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  LIST VIEW
+    // ══════════════════════════════════════════════════════════════════════════
+
+    function buildListView(items) {
+        const container = document.getElementById('listView');
+        if (!items.length) { container.innerHTML = ''; return; }
+        container.innerHTML = items.map(item => `
+            <div class="list-item-card" onclick="openDetail(allItems.find(i=>i.id===${item.id}))">
+                ${item.imageUrl
+                    ? `<img class="list-item-img" src="${item.imageUrl}" alt="${item.name}">`
+                    : `<div class="list-item-noimg"><i class="fa-solid fa-box-open"></i></div>`}
+                <div class="list-item-info">
+                    <div class="list-item-name">${item.name}</div>
+                    <div class="list-item-cat">${item.category || 'Other'}</div>
+                    <div class="list-item-meta">
+                        <span><i class="fa-solid fa-location-dot"></i> ${item.location || 'Not specified'}</span>
+                        <span><i class="fa-solid fa-calendar"></i> ${item.dateFound ? new Date(item.dateFound).toLocaleDateString() : 'Unknown'}</span>
+                        <span><span class="card-status-dot ${item.status}" style="width:8px;height:8px;vertical-align:middle;display:inline-block;border-radius:50%;margin-right:3px;background:${item.status==='active'?'#28a745':item.status==='claimed'?'#f0a500':'#ccc'}"></span>${item.status || 'active'}</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary" style="padding:8px 16px;font-size:0.85em;align-self:center;">Details</button>
+            </div>`).join('');
+    }
+
+    // ── FILTERS ────────────────────────────────────────────────────────────────
+    function applyFilters() {
+        const search   = document.getElementById('searchInput').value.toLowerCase();
+        const category = document.getElementById('categoryFilter').value;
+        const status   = document.getElementById('statusFilter').value;
+        const date     = document.getElementById('dateFilter').value;
+        const filtered = allItems.filter(item => {
+            const ms = !search   || item.name.toLowerCase().includes(search) || (item.description||'').toLowerCase().includes(search);
+            const mc = !category || item.category === category;
+            const mx = !status   || item.status === status;
+            const md = !date     || (item.dateFound && new Date(item.dateFound).toLocaleDateString() === new Date(date).toLocaleDateString());
+            return ms && mc && mx && md;
+        });
+        displayItems(filtered);
+    }
+
+    function resetFilters() {
+        ['searchInput','categoryFilter','statusFilter','dateFilter'].forEach(id => document.getElementById(id).value = '');
+        displayItems(allItems);
+    }
+
+    // ── NAV ────────────────────────────────────────────────────────────────────
+    window.addEventListener('scroll', () => {
+        document.getElementById('nav-bar').classList.toggle('transparent', window.scrollY <= 50);
+    });
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const mobileMenu   = document.getElementById('mobileMenu');
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', () => {
+            hamburgerBtn.classList.toggle('active');
+            mobileMenu.classList.toggle('active');
+        });
+        mobileMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => {
+            hamburgerBtn.classList.remove('active');
+            mobileMenu.classList.remove('active');
+        }));
+    }
+
+    // Filter listeners
+    document.getElementById('searchInput').addEventListener('keyup',    applyFilters);
+    document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+    document.getElementById('statusFilter').addEventListener('change',   applyFilters);
+
+    // ── INIT ───────────────────────────────────────────────────────────────────
+    loadCategories();
+    loadItems();
+    </script>
+</body>
+</html>

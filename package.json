@@ -1,0 +1,32 @@
+{
+  "name": "lost-but-found",
+  "version": "3.0.0",
+  "description": "A dynamic Lost & Found system with PostgreSQL database",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@emailjs/browser": "^4.4.1",
+    "axios": "^1.13.6",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.6.1",
+    "ejs": "^3.1.10",
+    "email": "^0.2.6",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3",
+    "leaflet": "^1.9.4",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.20.0"
+  },
+  "keywords": [
+    "lost",
+    "found",
+    "express",
+    "postgresql"
+  ],
+  "author": "Kushal Khatri",
+  "license": "MIT",
+  "type": "commonjs"
+}

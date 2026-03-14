@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lost But Found - Find Lost Items on Campus</title>
+    <link rel="icon" type="image/png" href="/images/Favicon.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+   <nav id="nav-bar" class="transparent">
+    <div class="nav-left">
+        <a href="/" class="nav-logo">
+            <img src="/images/Home-logo.png" alt="Lost But Found" width="48" height="48">
+        </a>
+        <a href="/uploadItem">Submit Item</a>
+        <a href="/browse">Browse Items</a>
+        <a href="/claim">Claim Item</a>
+    </div>
+    <div class="nav-right">
+        <a href="/account" class="nav-auth">My Account</a>
+        <a href="/register" class="nav-auth">Register</a>
+        <a href="/login" class="nav-auth">Login</a>
+        <a href="/admin/login" class="nav-auth">Admin</a>
+    </div>
+    <button class="hamburger-menu" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="/">Home</a>
+    <a href="/uploadItem">Submit Item</a>
+    <a href="/browse">Browse Items</a>
+    <a href="/claim">Claim Item</a>
+    <a href="/account" class="nav-auth">My Account</a>
+    <a href="/register" class="nav-auth">Register</a>
+    <a href="/login" class="nav-auth">Login</a>
+    <a href="/admin/login" class="nav-auth">Admin</a>
+</div>
+
+
+    <main>
+        <!-- Hero Section -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Find Your Lost Items</h1>
+                <p class="hero-subtitle">Help reunite people with their belongings. Browse found items or report a lost item.</p>
+                <div class="hero-cta">
+                    <a href="/browse" class="btn btn-primary">Browse Found Items</a>
+                    <a href="/upload" class="btn btn-outline">Report Found Item</a>
+                </div>
+            </div>
+            <div class="scroll-indicator"><i class="fa-solid fa-chevron-down"></i></div>
+        </div>
+
+        <!-- Gradient body wrapper starts here -->
+        <div class="body-gradient-wrap">
+
+        <!-- How It Works — 3D Card Carousel -->
+        <section class="section hiw-section">
+            <div class="container">
+                <h2 class="hiw-title">How It Works</h2>
+                <div class="hiw-scene-wrap">
+                    <button class="hiw-arrow hiw-arrow-left" id="hiwPrev">&#8592;</button>
+                    <div class="hiw-stage" id="hiwStage">
+                        <div class="hiw-card" data-step="0"><div class="hiw-card-inner"><div class="hiw-number">1</div><div class="hiw-icon"><i class="fa-solid fa-box-open"></i></div><div class="hiw-card-title">Submit Found Item</div><div class="hiw-card-desc">Fill out the form with details about the item you found and where you found it on campus.</div></div></div>
+                        <div class="hiw-card" data-step="1"><div class="hiw-card-inner"><div class="hiw-number">2</div><div class="hiw-icon"><i class="fa-solid fa-magnifying-glass"></i></div><div class="hiw-card-title">Item Gets Reviewed</div><div class="hiw-card-desc">Our admin team reviews the submission to verify and approve the found item listing.</div></div></div>
+                        <div class="hiw-card" data-step="2"><div class="hiw-card-inner"><div class="hiw-number">3</div><div class="hiw-icon"><i class="fa-solid fa-hand-point-up"></i></div><div class="hiw-card-title">Owner Claims It</div><div class="hiw-card-desc">The rightful owner finds the item on the browse page and submits a claim with proof.</div></div></div>
+                        <div class="hiw-card" data-step="3"><div class="hiw-card-inner"><div class="hiw-number">4</div><div class="hiw-icon"><i class="fa-solid fa-circle-check"></i></div><div class="hiw-card-title">Item Returned</div><div class="hiw-card-desc">The claim is approved and the item is reunited with its owner. Mission complete!</div></div></div>
+                    </div>
+                    <button class="hiw-arrow hiw-arrow-right" id="hiwNext">&#8594;</button>
+                </div>
+                <div class="hiw-dots">
+                    <span class="hiw-dot active" data-i="0"></span>
+                    <span class="hiw-dot" data-i="1"></span>
+                    <span class="hiw-dot" data-i="2"></span>
+                    <span class="hiw-dot" data-i="3"></span>
+                </div>
+            </div>
+        </section>
+        <script>
+        (function(){
+            const cards=document.querySelectorAll('.hiw-card'),dots=document.querySelectorAll('.hiw-dot'),prev=document.getElementById('hiwPrev'),next=document.getElementById('hiwNext'),total=cards.length;
+            let current=0,animating=false;
+            const POS={center:{x:0,z:0,ry:0,scale:1,opacity:1,zIndex:10},left:{x:-280,z:-120,ry:35,scale:0.78,opacity:0.55,zIndex:5},right:{x:280,z:-120,ry:-35,scale:0.78,opacity:0.55,zIndex:5},back:{x:0,z:-260,ry:0,scale:0.55,opacity:0,zIndex:1}};
+            function getPos(i){const d=((i-current)%total+total)%total;if(d===0)return'center';if(d===1)return'right';if(d===total-1)return'left';return'back';}
+            function applyPos(card,p){const q=POS[p];card.style.transform=`translateX(${q.x}px) translateZ(${q.z}px) rotateY(${q.ry}deg) scale(${q.scale})`;card.style.opacity=q.opacity;card.style.zIndex=q.zIndex;}
+            function render(anim){cards.forEach((c,i)=>{c.style.transition=anim?'transform 0.55s cubic-bezier(0.4,0,0.2,1),opacity 0.55s ease':'none';applyPos(c,getPos(i));});dots.forEach((d,i)=>d.classList.toggle('active',i===current));}
+            function go(dir){if(animating)return;animating=true;current=((current+dir)%total+total)%total;render(true);setTimeout(()=>animating=false,560);}
+            prev.addEventListener('click',()=>go(-1));
+            next.addEventListener('click',()=>go(1));
+            dots.forEach(d=>d.addEventListener('click',()=>{current=parseInt(d.dataset.i);render(true);setTimeout(()=>animating=false,560);}));
+            let tx=0;
+            document.getElementById('hiwStage').addEventListener('touchstart',e=>tx=e.touches[0].clientX);
+            document.getElementById('hiwStage').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>40)go(dx<0?1:-1);});
+            render(false);
+        })();
+        </script>
+
+
+        <!-- ── SCHOOL MAP SECTION ───────────────────────────────────────── -->
+        <section class="section" id="map-section">
+            <div class="container">
+                <h2 style="text-align:center; margin-bottom:12px; font-size:2em;">Where Was It Found?</h2>
+                <p style="text-align:center; color:#666; margin-bottom:32px; font-size:1.05em;">Explore Old Mill High School's floor plan. Click any area to browse items found there.</p>
+
+                <!-- Floor toggle -->
+                <div style="display:flex; justify-content:center; gap:8px; margin-bottom:16px;">
+                    <button class="map-btn on" id="mb0" onclick="mapSV(0)">Both Floors</button>
+                    <button class="map-btn" id="mb1" onclick="mapSV(1)">Floor 1</button>
+                    <button class="map-btn" id="mb2" onclick="mapSV(2)">Floor 2</button>
+                    <button class="map-btn" onclick="mapRst()">Reset</button>
+                </div>
+
+                <div id="map-wrap" style="width:100%;height:520px;position:relative;overflow:hidden;background:#f5f6f8;border-radius:12px;border:1px solid #e0e0e0;">
+                    <canvas id="mapCanvas"></canvas>
+                    <div id="mapLabel" style="position:absolute;top:14px;left:14px;font-size:13px;font-weight:600;color:#555;pointer-events:none;">Both Floors</div>
+                    <div style="position:absolute;top:14px;right:14px;font-size:11px;color:#999;pointer-events:none;">drag · scroll to explode</div>
+                    <div id="mapTip" style="position:absolute;display:none;background:white;border:1px solid #ddd;border-radius:8px;padding:5px 12px;font-size:12px;color:#333;pointer-events:none;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.12);"></div>
+                </div>
+
+                <p style="text-align:center; margin-top:12px; font-size:0.85em; color:#999;">Click a room to search lost items from that location</p>
+            </div>
+        </section>
+
+        <style>
+            .map-btn {
+                font-size: 13px;
+                padding: 6px 16px;
+                border-radius: 20px;
+                border: 1.5px solid #ccc;
+                background: white;
+                color: #555;
+                cursor: pointer;
+                font-family: inherit;
+                transition: all 0.15s;
+            }
+            .map-btn:hover { border-color: #0066cc; color: #0066cc; }
+            .map-btn.on { border-color: #0066cc; background: #0066cc; color: white; }
+        </style>
+
+        <script>
+        (function() {
+            const cv  = document.getElementById('mapCanvas');
+            const ctx = cv.getContext('2d');
+            const wrap = document.getElementById('map-wrap');
+            const tip  = document.getElementById('mapTip');
+            const lbl  = document.getElementById('mapLabel');
+
+            let W, H;
+            function rsz() {
+                W = wrap.clientWidth; H = wrap.clientHeight;
+                cv.width = W; cv.height = H;
+            }
+            rsz(); window.addEventListener('resize', rsz);
+
+            let rotX = 0.38, rotY = 0.52;
+            let explode = 0, tExp = 0;
+            let view = 0;
+            let drag = false, lx = 0, ly = 0;
+            let spinning = false, spinTriggered = false;
+            let spinStart = 0, spinFrom = 0;
+
+            // ── DRAG ──────────────────────────────────────────────────────
+            cv.addEventListener('mousedown', e => { drag = true; lx = e.clientX; ly = e.clientY; });
+            window.addEventListener('mouseup', () => drag = false);
+            window.addEventListener('mousemove', e => {
+                if (!drag) return;
+                rotY += (e.clientX - lx) * 0.008;
+                rotX += (e.clientY - ly) * 0.005;
+                rotX = Math.max(0.08, Math.min(0.95, rotX));
+                lx = e.clientX; ly = e.clientY;
+            });
+
+            // ── SCROLL TO EXPLODE ─────────────────────────────────────────
+            wrap.addEventListener('wheel', e => {
+                e.preventDefault();
+                tExp = Math.max(0, Math.min(1, tExp + e.deltaY * 0.0012));
+            }, { passive: false });
+
+            // ── TOUCH ─────────────────────────────────────────────────────
+            let ltx = 0, lty = 0;
+            cv.addEventListener('touchstart', e => { ltx = e.touches[0].clientX; lty = e.touches[0].clientY; });
+            cv.addEventListener('touchmove', e => {
+                e.preventDefault();
+                rotY += (e.touches[0].clientX - ltx) * 0.01;
+                rotX += (e.touches[0].clientY - lty) * 0.007;
+                rotX = Math.max(0.08, Math.min(0.95, rotX));
+                ltx = e.touches[0].clientX; lty = e.touches[0].clientY;
+            }, { passive: false });
+
+            // ── TOOLTIP ───────────────────────────────────────────────────
+            cv.addEventListener('mousemove', e => {
+                const r = cv.getBoundingClientRect();
+                tip.style.left = (e.clientX - r.left + 12) + 'px';
+                tip.style.top  = (e.clientY - r.top - 8) + 'px';
+            });
+            cv.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+
+            // ── PINNED ITEM MARKERS ───────────────────────────────────────
+            // School real-world bounds → map to 3D XZ space
+            // Old Mill: approx lat 39.1215–39.1250, lng -76.6305 to -76.6270
+            const LAT_MIN = 39.1215, LAT_MAX = 39.1250;
+            const LNG_MIN = -76.6305, LNG_MAX = -76.6270;
+            const MAP_X_MIN = -260, MAP_X_MAX = 360;
+            const MAP_Z_MIN = -300, MAP_Z_MAX = 310;
+
+            let pinnedItems = [];
+
+            function latLngTo3D(lat, lng) {
+                const nx = (lng - LNG_MIN) / (LNG_MAX - LNG_MIN);
+                const nz = 1 - (lat - LAT_MIN) / (LAT_MAX - LAT_MIN);
+                return {
+                    x: MAP_X_MIN + nx * (MAP_X_MAX - MAP_X_MIN),
+                    z: MAP_Z_MIN + nz * (MAP_Z_MAX - MAP_Z_MIN)
+                };
+            }
+
+            // Preload item images as Image objects for fast drawing
+            const imgCache = {};
+            function getImg(url) {
+                if (!url) return null;
+                if (!imgCache[url]) {
+                    const im = new Image();
+                    im.crossOrigin = 'anonymous';
+                    im.src = url;
+                    imgCache[url] = im;
+                }
+                return imgCache[url];
+            }
+
+            // Fetch pinned items from API
+            fetch('/api/items/pinned')
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        pinnedItems = d.items;
+                        pinnedItems.forEach(it => { if (it.imageUrl) getImg(it.imageUrl); });
+                    }
+                })
+                .catch(() => {});
+
+            let hoveredMarker = null;
+
+            function drawMarkers(y1b, y2b) {
+                if (!pinnedItems.length) return;
+                hoveredMarker = null;
+
+                pinnedItems.forEach(item => {
+                    if (!item.pinLat || !item.pinLng) return;
+                    // Hide markers that belong to a hidden floor
+                    if (view === 1 && item.pinFloor === 2) return;
+                    if (view === 2 && item.pinFloor === 1) return;
+
+                    const markerY = item.pinFloor === 2 ? y2b - 2 : y1b - 2;
+                    const { x, z } = latLngTo3D(item.pinLat, item.pinLng);
+                    const p = proj(x, markerY, z);
+                    const r = 8 * p.fov;
+
+                    const isHov = lastMouseX !== null &&
+                        Math.hypot(lastMouseX - p.x, lastMouseY - p.y) < r + 4;
+                    if (isHov) hoveredMarker = item;
+
+                    // Pin circle
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+                    ctx.fillStyle = isHov ? '#cc0000' : '#0066cc';
+                    ctx.fill();
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // Floor badge inside pin
+                    if (item.pinFloor) {
+                        ctx.save();
+                        ctx.font = `bold ${Math.round(6.5 * p.fov)}px sans-serif`;
+                        ctx.fillStyle = 'white';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('F' + item.pinFloor, p.x, p.y);
+                        ctx.restore();
+                    }
+
+                    // Pulse ring on hover
+                    if (isHov) {
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, r + 5, 0, Math.PI * 2);
+                        ctx.strokeStyle = 'rgba(204,0,0,0.35)';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                });
+
+                // Draw popup card last so it sits on top of everything
+                if (hoveredMarker) {
+                    const it = hoveredMarker;
+                    const markerY = it.pinFloor === 2 ? y2b - 2 : y1b - 2;
+                    const { x, z } = latLngTo3D(it.pinLat, it.pinLng);
+                    const p = proj(x, markerY, z);
+                    const img = it.imageUrl ? getImg(it.imageUrl) : null;
+
+                    const pw = 140, ph = img ? 158 : 58, pad = 8;
+                    let px = p.x + 14, py = p.y - ph - 10;
+                    if (px + pw > W - 10) px = p.x - pw - 14;
+                    if (py < 10) py = p.y + 14;
+
+                    // Card
+                    ctx.save();
+                    ctx.fillStyle = 'white';
+                    ctx.shadowColor = 'rgba(0,0,0,0.18)';
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.roundRect(px, py, pw, ph, 8);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = '#e0e0e0';
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                    ctx.restore();
+
+                    if (img && img.complete && img.naturalWidth > 0) {
+                        // Clipped image
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.roundRect(px + pad, py + pad, pw - pad*2, 100, 4);
+                        ctx.clip();
+                        ctx.drawImage(img, px + pad, py + pad, pw - pad*2, 100);
+                        ctx.restore();
+                        // Name
+                        ctx.save();
+                        ctx.font = 'bold 9.5px sans-serif';
+                        ctx.fillStyle = '#222';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(it.name.length > 18 ? it.name.slice(0,17)+'…' : it.name, px + pw/2, py + 118);
+                        // Location
+                        ctx.font = '8.5px sans-serif';
+                        ctx.fillStyle = '#888';
+                        const loc = (it.location||'').length > 20 ? (it.location||'').slice(0,19)+'…' : (it.location||'');
+                        ctx.fillText(loc, px + pw/2, py + 132);
+                        // Floor badge
+                        if (it.pinFloor) {
+                            ctx.font = 'bold 8px sans-serif';
+                            ctx.fillStyle = '#0066cc';
+                            ctx.fillText('Floor ' + it.pinFloor, px + pw/2, py + 148);
+                        }
+                        ctx.restore();
+                    } else {
+                        ctx.save();
+                        ctx.font = 'bold 10px sans-serif';
+                        ctx.fillStyle = '#222';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(it.name.length > 18 ? it.name.slice(0,17)+'…' : it.name, px + pw/2, py + ph/2 - 8);
+                        if (it.pinFloor) {
+                            ctx.font = '8px sans-serif';
+                            ctx.fillStyle = '#0066cc';
+                            ctx.fillText('Floor ' + it.pinFloor, px + pw/2, py + ph/2 + 10);
+                        }
+                        ctx.restore();
+                    }
+
+                    cv.style.cursor = 'pointer';
+                    tip.style.display = 'none';
+                }
+            }
+
+            // Click on marker → go to browse filtered by item name
+            cv.addEventListener('click', e => {
+                if (hoveredMarker) {
+                    window.location.href = '/browse?search=' + encodeURIComponent(hoveredMarker.name);
+                } else if (lastHovered) {
+                    window.location.href = '/browse?search=' + encodeURIComponent(lastHovered);
+                }
+            });
+
+
+
+            // ── CONTROLS ──────────────────────────────────────────────────
+            window.mapSV = function(n) {
+                view = n;
+                lbl.textContent = ['Both Floors', 'Floor 1', 'Floor 2'][n];
+                [0,1,2].forEach(i => document.getElementById('mb'+i).classList.toggle('on', i === n));
+            };
+            window.mapRst = function() { rotX = 0.38; rotY = 0.52; tExp = 0; };
+
+            // ── SCROLL TRIGGER — 360 spin on first intersect ──────────────
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !spinTriggered) {
+                        spinTriggered = true;
+                        spinning  = true;
+                        spinStart = performance.now();
+                        spinFrom  = rotY;
+                        observer.disconnect();
+                    }
+                });
+            }, { threshold: 0.4 });
+            observer.observe(wrap);
+
+            // ── PROJECTION ────────────────────────────────────────────────
+            function proj(x, y, z) {
+                const cx = Math.cos(rotY), sx = Math.sin(rotY);
+                const cy = Math.cos(rotX), sy = Math.sin(rotX);
+                let rx = x * cx - z * sx, rz = x * sx + z * cx;
+                let ry = y * cy - rz * sy, rz2 = y * sy + rz * cy;
+                const fov = 900 / (900 + rz2);
+                return { x: W/2 + rx * fov, y: H/2 + (ry - 20) * fov, z: rz2, fov };
+            }
+
+            const HW = '#D3D1C7', HS = '#888780';
+
+            // ── FLOOR 1 ───────────────────────────────────────────────────
+            const f1 = [
+                { n:'art wing',            pts:[[-240,-270],[-80,-270],[-80,-80],[-240,-80]],   ct:'#F5C4B3', cs:'#D85A30' },
+                { n:'tech hallway',        pts:[[-80,-270],[60,-270],[60,-80],[-80,-80]],        ct:'#FAC775', cs:'#BA7517' },
+                { n:'history dept',        pts:[[-60,-80],[60,-80],[60,60],[-60,60]],            ct:'#E6F1FB', cs:'#378ADD' },
+                { n:'gym + locker rooms',  pts:[[-240,-80],[-80,-80],[-80,140],[-240,140]],     ct:'#FAC775', cs:'#BA7517' },
+                { n:'cafe corridor',       pts:[[-40,60],[40,60],[40,140],[-40,140]],            ct:HW, cs:HS },
+                { n:'admin office',        pts:[[60,-80],[200,-80],[200,60],[60,60]],            ct:'#B5D4F4', cs:'#378ADD' },
+                { n:'locker bank north',   pts:[[-110,60],[-40,60],[-40,160],[-110,160]],       ct:HW, cs:HS },
+                { n:'cafeteria',           pts:[[-110,140],[110,140],[110,290],[-110,290]],     ct:'#C0DD97', cs:'#639922' },
+                { n:'locker bank south',   pts:[[60,160],[130,160],[130,290],[60,290]],         ct:HW, cs:HS },
+                { n:'hallway',             pts:[[-80,-95],[60,-95],[60,-80],[-80,-80]],          ct:HW, cs:HS },
+                { n:'hallway',             pts:[[-80,-10],[-60,-10],[-60,60],[-80,60]],          ct:HW, cs:HS },
+                { n:'auditorium',          pts:[[200,-130],[340,-130],[340,130],[200,130]],     ct:'#EEEDFE', cs:'#7F77DD', tall:true },
+            ];
+
+            // ── FLOOR 2 ───────────────────────────────────────────────────
+            const f2 = [
+                { n:'science wing',        pts:[[-240,-270],[-80,-270],[-80,-80],[-240,-80]],  ct:'#C0DD97', cs:'#639922' },
+                { n:'math wing',           pts:[[60,-270],[200,-270],[200,-80],[60,-80]],       ct:'#FAC775', cs:'#BA7517' },
+                { n:'library',             pts:[[-80,-100],[80,-100],[80,100],[-80,100]],       ct:'#EEEDFE', cs:'#534AB7' },
+                { n:'CS lab',              pts:[[20,-100],[80,-100],[80,-30],[20,-30]],         ct:'#FAC775', cs:'#BA7517' },
+                { n:'english hallway',     pts:[[60,60],[210,60],[210,290],[60,290]],           ct:'#F5C4B3', cs:'#D85A30' },
+                { n:'foreign language',    pts:[[-210,60],[-40,60],[-40,290],[-210,290]],      ct:'#EEEDFE', cs:'#7F77DD' },
+                { n:'hallway',             pts:[[-240,-100],[200,-100],[200,-80],[-240,-80]],   ct:HW, cs:HS },
+                { n:'hallway',             pts:[[-80,-80],[-60,-80],[-60,100],[-80,100]],       ct:HW, cs:HS },
+                { n:'hallway',             pts:[[60,-80],[80,-80],[80,100],[60,100]],           ct:HW, cs:HS },
+                { n:'hallway',             pts:[[-80,60],[-40,60],[-40,100],[-80,100]],         ct:HW, cs:HS },
+                { n:'hallway',             pts:[[60,60],[80,60],[80,100],[60,100]],             ct:HW, cs:HS },
+                { n:'hallway',             pts:[[-40,95],[60,95],[60,115],[-40,115]],           ct:HW, cs:HS },
+                { n:'hallway',             pts:[[-240,-80],[-210,-80],[-210,60],[-240,60]],     ct:HW, cs:HS },
+                { n:'hallway',             pts:[[200,-80],[210,-80],[210,60],[200,60]],         ct:HW, cs:HS },
+                { n:'hallway',             pts:[[-215,60],[-195,60],[-195,-80],[-215,-80]],     ct:HW, cs:HS },
+                { n:'hallway',             pts:[[195,60],[215,60],[215,-80],[195,-80]],         ct:HW, cs:HS },
+            ];
+
+            function hexRgba(h, a) {
+                const r = parseInt(h.slice(1,3),16), g = parseInt(h.slice(3,5),16), b = parseInt(h.slice(5,7),16);
+                return `rgba(${r},${g},${b},${a})`;
+            }
+
+            let lastHovered = null;
+
+            function drawPrism(pts, yBase, yTop, ct, cs, label, alpha, isH) {
+                if (alpha < 0.03) return;
+                const n = pts.length;
+                const top = pts.map(([x,z]) => proj(x, yTop, z));
+                const bot = pts.map(([x,z]) => proj(x, yBase, z));
+                const faces = [];
+                for (let i = 0; i < n; i++) {
+                    const j = (i+1) % n;
+                    const nx = (top[j].x-top[i].x)*(bot[i].y-top[i].y)-(top[j].y-top[i].y)*(bot[i].x-top[i].x);
+                    faces.push({ i, j, cz:(top[i].z+top[j].z+bot[i].z+bot[j].z)/4, front: nx < 0 });
+                }
+                faces.sort((a,b) => b.cz - a.cz);
+                for (const f of faces) {
+                    if (!f.front) continue;
+                    const {i,j} = f;
+                    ctx.beginPath();
+                    ctx.moveTo(top[i].x, top[i].y); ctx.lineTo(top[j].x, top[j].y);
+                    ctx.lineTo(bot[j].x, bot[j].y); ctx.lineTo(bot[i].x, bot[i].y);
+                    ctx.closePath();
+                    ctx.fillStyle = hexRgba(cs, alpha * (isH ? 0.4 : 0.8));
+                    ctx.fill();
+                    ctx.strokeStyle = hexRgba('#222', alpha * 0.12);
+                    ctx.lineWidth = 0.5; ctx.stroke();
+                }
+                ctx.beginPath();
+                top.forEach((p,i) => i === 0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+                ctx.closePath();
+                ctx.fillStyle = hexRgba(ct, alpha * (isH ? 0.7 : 1));
+                ctx.fill();
+                ctx.strokeStyle = hexRgba('#222', alpha * 0.12);
+                ctx.lineWidth = 0.5; ctx.stroke();
+
+                // Hover detection on top face
+                if (!isH && alpha > 0.3) {
+                    const mx2 = lastMouseX, my2 = lastMouseY;
+                    if (mx2 !== null) {
+                        ctx.beginPath();
+                        top.forEach((p,i) => i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+                        ctx.closePath();
+                        if (ctx.isPointInPath(mx2, my2)) {
+                            lastHovered = label;
+                            tip.style.display = 'block';
+                            tip.textContent = label + ' — click to browse';
+                            cv.style.cursor = 'pointer';
+                        }
+                    }
+                }
+
+                if (!isH && alpha > 0.3) {
+                    const cx2 = top.reduce((s,p) => s+p.x, 0) / n;
+                    const cy2 = top.reduce((s,p) => s+p.y, 0) / n;
+                    const fz  = top[0].fov;
+                    ctx.save(); ctx.globalAlpha = alpha * 0.9;
+                    ctx.font = `${Math.round(8.5*fz)}px sans-serif`;
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    const words = label.split(' ');
+                    if (words.length <= 2) { ctx.fillText(label, cx2, cy2); }
+                    else {
+                        const mid = Math.ceil(words.length / 2);
+                        ctx.fillText(words.slice(0,mid).join(' '), cx2, cy2 - 6*fz);
+                        ctx.fillText(words.slice(mid).join(' '),   cx2, cy2 + 6*fz);
+                    }
+                    ctx.restore();
+                }
+            }
+
+            function avgZ(pts, y) { return pts.reduce((s,[x,z]) => s + proj(x,y,z).z, 0) / pts.length; }
+
+            let lastMouseX = null, lastMouseY = null;
+            cv.addEventListener('mousemove', e => {
+                const r = cv.getBoundingClientRect();
+                lastMouseX = e.clientX - r.left;
+                lastMouseY = e.clientY - r.top;
+            });
+            cv.addEventListener('mouseleave', () => { lastMouseX = null; lastMouseY = null; });
+
+            function draw(ts) {
+                // Spin animation
+                if (spinning) {
+                    const elapsed = ts - spinStart;
+                    const dur = 1600; // ms for full 360
+                    const t = Math.min(elapsed / dur, 1);
+                    // ease in-out cubic
+                    const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+                    rotY = spinFrom + ease * Math.PI * 2;
+                    if (t >= 1) { rotY = spinFrom + Math.PI * 2; spinning = false; }
+                }
+
+                explode += (tExp - explode) * 0.07;
+                ctx.clearRect(0, 0, W, H);
+
+                const sep  = 55 + explode * 90;
+                const y1b  = 0,   y1t = -30;
+                const y2b  = -sep, y2t = -sep - 30;
+                const all  = [];
+
+                lastHovered = null;
+                cv.style.cursor = 'default';
+                tip.style.display = 'none';
+
+                f1.forEach(w => {
+                    const a  = view === 2 ? 0.12 : 1;
+                    const yb = w.tall ? y2t - 6 : y1b;
+                    const yt = w.tall ? y1b + 4  : y1t;
+                    all.push({ ...w, yBase:yb, yTop:yt, alpha:a, isH: w.n==='hallway'||w.n==='cafe corridor' });
+                });
+                f2.forEach(w => {
+                    const a = view === 1 ? 0.12 : 1;
+                    all.push({ ...w, yBase:y2b, yTop:y2t, alpha:a, isH: w.n==='hallway' });
+                });
+
+                all.sort((a,b) => avgZ(b.pts,(b.yBase+b.yTop)/2) - avgZ(a.pts,(a.yBase+a.yTop)/2));
+                all.forEach(w => drawPrism(w.pts, w.yBase, w.yTop, w.ct, w.cs, w.n, w.alpha, w.isH));
+
+                // Draw pinned item markers on top of building
+                drawMarkers(y1b, y2b);
+
+                // Floor plates
+                [y1b, y2b].forEach((y, fi) => {
+                    if (view===1 && fi===1) return;
+                    if (view===2 && fi===0) return;
+                    ctx.save(); ctx.globalAlpha = 0.06;
+                    ctx.strokeStyle = '#555'; ctx.lineWidth = 1; ctx.setLineDash([4,6]);
+                    const c = [[-260,-300],[360,-300],[360,310],[-260,310]];
+                    ctx.beginPath();
+                    c.forEach(([x,z],i) => { const p = proj(x,y,z); i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); });
+                    ctx.closePath(); ctx.stroke(); ctx.restore();
+                });
+
+                requestAnimationFrame(draw);
+            }
+            requestAnimationFrame(draw);
+        })();
+        </script>
+
+        <!-- Call to Action -->
+        <section class="section" style="background: linear-gradient(135deg, #0066cc 0%, #cc0000 100%); color: white; text-align: center;">
+            <div class="container">
+                <h2 style="margin-bottom: 20px; color: white; font-size: 2em;">Found Something?</h2>
+                <p style="margin-bottom: 30px; font-size: 1.1em;">Help us reunite lost items with their owners</p>
+                <a href="/upload" class="btn btn-primary" style="background: white; color: #0066cc;">Submit Found Item Now</a>
+            </div>
+        </section>
+
+        </div><!-- /body-gradient-wrap -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>Lost But Found</h3>
+                <p class="footer-description">Helping reunite people with their lost belongings through a simple and secure platform.</p>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="/"><img src="/images/Home-logo.png" alt="Lost But Found" width="48" height="48"></a>
+                    <li><a href="/browse">Browse Items</a></li>
+                    <li><a href="/upload">Submit Item</a></li>
+                    <li><a href="/claim">Claim Item</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>User</h3>
+                <ul class="footer-links">
+                    <li><a href="/register">Register</a></li>
+                    <li><a href="/login">Login</a></li>
+                    <li><a href="/faq">FAQ</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Admin</h3>
+                <ul class="footer-links">
+                    <li><a href="/admin/login">Admin Login</a></li>
+                    <li><a href="/faq">Support</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-copyright">&copy; 2025 Lost But Found. All rights reserved.</div>
+            <div class="footer-legal">
+                <div class="footer-legal-text">
+                    By using this platform, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                </div>
+            </div>
+            <div class="footer-bottom-links">
+                <a href="#">Terms</a>
+                <span class="divider">|</span>
+                <a href="#">Privacy</a>
+                <span class="divider">|</span>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navbar scroll effect
+
+        // Hamburger menu toggle
+        const hamburgerBtn = document.getElementById("hamburgerBtn");
+        const mobileMenu = document.getElementById("mobileMenu");
+
+        if (hamburgerBtn) {
+            hamburgerBtn.addEventListener("click", () => {
+                hamburgerBtn.classList.toggle("active");
+                mobileMenu.classList.toggle("active");
+            });
+
+            mobileMenu.querySelectorAll("a").forEach(link => {
+                link.addEventListener("click", () => {
+                    hamburgerBtn.classList.remove("active");
+                    mobileMenu.classList.remove("active");
+                });
+            });
+        }
+    </script>
+
+    <!-- ── AI CHATBOT WIDGET ─────────────────────────────────────────── -->
+    <style>
+        /* Chat toggle button */
+        #chatToggle {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0066cc 0%, #cc0000 100%);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,102,204,0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        #chatToggle:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(0,102,204,0.55); }
+        #chatToggle svg { width: 26px; height: 26px; fill: white; }
+        #chatToggle .close-icon { display: none; }
+        #chatToggle.open .chat-icon  { display: none; }
+        #chatToggle.open .close-icon { display: block; }
+
+        /* Unread dot */
+        #chatBadge {
+            position: absolute;
+            top: 2px; right: 2px;
+            width: 12px; height: 12px;
+            background: #ffcc00;
+            border-radius: 50%;
+            border: 2px solid white;
+            display: none;
+        }
+
+        /* Chat window */
+        #chatWindow {
+            position: fixed;
+            bottom: 100px;
+            right: 28px;
+            width: 360px;
+            max-height: 520px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.18);
+            display: flex;
+            flex-direction: column;
+            z-index: 999;
+            overflow: hidden;
+            transform: scale(0.92) translateY(16px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        #chatWindow.open {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Header */
+        .chat-header {
+            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chat-header-avatar {
+            width: 36px; height: 36px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2em;
+        }
+        .chat-header-info { flex: 1; }
+        .chat-header-info strong { color: white; display: block; font-size: 0.97em; }
+        .chat-header-info span { color: rgba(255,255,255,0.72); font-size: 0.78em; }
+        .chat-online-dot {
+            width: 8px; height: 8px;
+            background: #44dd88;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        /* Messages */
+        #chatMessages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #f7f9fc;
+            min-height: 280px;
+            max-height: 340px;
+        }
+        #chatMessages::-webkit-scrollbar { width: 4px; }
+        #chatMessages::-webkit-scrollbar-thumb { background: #ccd; border-radius: 4px; }
+
+        .chat-msg {
+            max-width: 82%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 0.9em;
+            line-height: 1.5;
+            animation: msgIn 0.18s ease;
+        }
+        @keyframes msgIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+        .chat-msg.bot {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            align-self: flex-start;
+        }
+        .chat-msg.user {
+            background: linear-gradient(135deg, #0066cc, #0055aa);
+            color: white;
+            border-bottom-right-radius: 4px;
+            align-self: flex-end;
+        }
+        .chat-msg.error {
+            background: #fff0f0;
+            color: #cc0000;
+            border: 1px solid #ffcccc;
+            align-self: flex-start;
+        }
+
+        /* Typing indicator */
+        .typing-dots {
+            display: flex; gap: 4px; align-items: center; padding: 4px 2px;
+        }
+        .typing-dots span {
+            width: 7px; height: 7px; background: #aab; border-radius: 50%;
+            animation: bounce 1.2s infinite;
+        }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-6px); } }
+
+        /* Quick replies */
+        .quick-replies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 0 16px 10px;
+            background: #f7f9fc;
+        }
+        .quick-reply-btn {
+            padding: 5px 12px;
+            border: 1px solid #0066cc;
+            border-radius: 20px;
+            background: white;
+            color: #0066cc;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .quick-reply-btn:hover { background: #0066cc; color: white; }
+
+        /* Input area */
+        .chat-input-area {
+            display: flex;
+            gap: 8px;
+            padding: 12px 14px;
+            border-top: 1px solid #eee;
+            background: white;
+        }
+        #chatInput {
+            flex: 1;
+            padding: 9px 13px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 22px;
+            font-size: 0.9em;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        #chatInput:focus { border-color: #0066cc; }
+        #chatSend {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, #0066cc, #cc0000);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.15s;
+            flex-shrink: 0;
+        }
+        #chatSend:hover { transform: scale(1.1); }
+        #chatSend svg { width: 16px; height: 16px; fill: white; }
+        #chatSend:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        @media (max-width: 420px) {
+            #chatWindow { width: calc(100vw - 24px); right: 12px; bottom: 88px; }
+            #chatToggle { right: 16px; bottom: 16px; }
+        }
+    </style>
+
+    <!-- Toggle button -->
+    <button id="chatToggle" aria-label="Open chat assistant" title="Chat with our AI assistant">
+        <div id="chatBadge"></div>
+        <!-- Chat icon -->
+        <svg class="chat-icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+        <!-- Close icon -->
+        <svg class="close-icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </button>
+
+    <!-- Chat window -->
+    <div id="chatWindow" role="dialog" aria-label="AI Chat Assistant">
+        <div class="chat-header">
+            <div class="chat-header-avatar"><i class="fa-solid fa-robot"></i></div>
+            <div class="chat-header-info">
+                <strong>Lost But Found Assistant</strong>
+                <span><span class="chat-online-dot"></span>Online · Powered by Claude AI</span>
+            </div>
+        </div>
+
+        <div id="chatMessages"></div>
+
+        <div class="quick-replies" id="quickReplies">
+            <button class="quick-reply-btn" onclick="sendQuick('How do I report a found item?')">Report item</button>
+            <button class="quick-reply-btn" onclick="sendQuick('How do I claim a lost item?')">Claim item</button>
+            <button class="quick-reply-btn" onclick="sendQuick('How does the review process work?')">Review process</button>
+        </div>
+
+        <div class="chat-input-area">
+            <input id="chatInput" type="text" placeholder="Ask me anything..." maxlength="500" autocomplete="off">
+            <button id="chatSend" aria-label="Send message">
+                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        const toggle    = document.getElementById('chatToggle');
+        const window_   = document.getElementById('chatWindow');
+        const messages  = document.getElementById('chatMessages');
+        const input     = document.getElementById('chatInput');
+        const sendBtn   = document.getElementById('chatSend');
+        const badge     = document.getElementById('chatBadge');
+        const qr        = document.getElementById('quickReplies');
+        let history     = [];
+        let isOpen      = false;
+        let hasGreeted  = false;
+
+        function toggleChat() {
+            isOpen = !isOpen;
+            toggle.classList.toggle('open', isOpen);
+            window_.classList.toggle('open', isOpen);
+            badge.style.display = 'none';
+            if (isOpen && !hasGreeted) {
+                hasGreeted = true;
+                setTimeout(() => addMessage('bot', "Hi! 👋 I'm the Lost But Found AI assistant. I can help you report a found item, file a claim, or answer questions about how the platform works. What can I help you with?"), 300);
+            }
+            if (isOpen) setTimeout(() => input.focus(), 250);
+        }
+
+        toggle.addEventListener('click', toggleChat);
+
+        // Show badge after 3s if not opened
+        setTimeout(() => { if (!isOpen) badge.style.display = 'block'; }, 3000);
+
+        function addMessage(role, text) {
+            const el = document.createElement('div');
+            el.className = 'chat-msg ' + role;
+            el.textContent = text;
+            messages.appendChild(el);
+            messages.scrollTop = messages.scrollHeight;
+            return el;
+        }
+
+        function addTyping() {
+            const el = document.createElement('div');
+            el.className = 'chat-msg bot';
+            el.id = 'typingIndicator';
+            el.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+            messages.appendChild(el);
+            messages.scrollTop = messages.scrollHeight;
+            return el;
+        }
+
+        async function sendMessage(text) {
+            if (!text.trim()) return;
+            input.value   = '';
+            sendBtn.disabled = true;
+            qr.style.display = 'none';
+
+            addMessage('user', text);
+            history.push({ role: 'user', content: text });
+
+            const typing = addTyping();
+
+            try {
+                const res  = await fetch('/api/chat', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ messages: history })
+                });
+                const data = await res.json();
+                typing.remove();
+
+                if (data.success) {
+                    const reply = data.reply;
+                    history.push({ role: 'assistant', content: reply });
+                    addMessage('bot', reply);
+                } else {
+                    addMessage('error', data.error || 'Something went wrong. Please try again.');
+                    history.pop();
+                }
+            } catch(e) {
+                typing.remove();
+                addMessage('error', 'Network error. Please check your connection and try again.');
+                history.pop();
+            }
+
+            sendBtn.disabled = false;
+            input.focus();
+        }
+
+        function sendQuick(text) {
+            if (!isOpen) toggleChat();
+            setTimeout(() => sendMessage(text), isOpen ? 0 : 400);
+        }
+        window.sendQuick = sendQuick;
+
+        sendBtn.addEventListener('click', () => sendMessage(input.value));
+        input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input.value); } });
+    })();
+    </script>
+
+</body>
+</html>

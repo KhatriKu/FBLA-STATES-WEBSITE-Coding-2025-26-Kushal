@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Lost But Found</title>
+    <link rel="icon" type="image/png" href="/images/Favicon.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- EmailJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <!-- Cloudflare Turnstile -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <style>
+        /* Verification code step */
+        #verifyStep { display: none; }
+        .verify-code-inputs { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+        .code-digit {
+            width: 48px; height: 56px;
+            font-size: 1.6em; font-weight: 700;
+            text-align: center; border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        .code-digit:focus { border-color: #0066cc; box-shadow: 0 0 0 3px rgba(0,102,204,0.12); }
+        .code-digit.error { border-color: #cc0000; animation: shake 0.3s ease; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+        .resend-link { font-size: 0.85em; color: #0066cc; cursor: pointer; text-align: center; display: block; margin-top: 8px; }
+        .resend-link:hover { text-decoration: underline; }
+        .resend-link.disabled { color: #aaa; cursor: not-allowed; pointer-events: none; }
+        .cf-turnstile { margin: 16px 0; display: flex; justify-content: center; }
+        .step-indicator { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
+        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; transition: background 0.3s; }
+        .step-dot.active { background: #0066cc; transform: scale(1.3); }
+        .step-dot.done { background: #28a745; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="nav-bar" class="transparent">
+    <div class="nav-left">
+        <a href="/" class="nav-logo">
+            <img src="/images/Home-logo.png" alt="Lost But Found" width="48" height="48">
+        </a>
+        <a href="/uploadItem">Submit Item</a>
+        <a href="/browse">Browse Items</a>
+        <a href="/claim">Claim Item</a>
+    </div>
+    <div class="nav-right">
+        <a href="/account" class="nav-auth">My Account</a>
+        <a href="/register" class="nav-auth">Register</a>
+        <a href="/login" class="nav-auth">Login</a>
+        <a href="/admin/login" class="nav-auth">Admin</a>
+    </div>
+    <button class="hamburger-menu" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="/">Home</a>
+    <a href="/uploadItem">Submit Item</a>
+    <a href="/browse">Browse Items</a>
+    <a href="/claim">Claim Item</a>
+    <a href="/account" class="nav-auth">My Account</a>
+    <a href="/register" class="nav-auth">Register</a>
+    <a href="/login" class="nav-auth">Login</a>
+    <a href="/admin/login" class="nav-auth">Admin</a>
+</div>
+
+    <main>
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1>Create Account</h1>
+                    <p>Join Lost But Found today</p>
+                </div>
+
+                <div id="errorMessage" class="error-message"></div>
+                <div id="successMessage" class="status-message status-success"></div>
+
+                <!-- Step indicator -->
+                <div class="step-indicator">
+                    <div class="step-dot active" id="dot1"></div>
+                    <div class="step-dot" id="dot2"></div>
+                </div>
+
+                <!-- STEP 1: Registration form -->
+                <div id="registerStep">
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <label for="fullName">Full Name</label>
+                            <input type="text" id="fullName" name="fullName" required maxlength="255" placeholder="John Doe">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" required placeholder="your.email@example.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="studentId">Student ID (Optional)</label>
+                            <input type="text" id="studentId" name="studentId" maxlength="20" placeholder="A00123456">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" required placeholder="Min. 8 characters">
+                            <div id="passwordStrength" style="margin-top: 8px; font-size: 0.85em; display: none;"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Re-enter password">
+                        </div>
+
+                        <div class="form-group">
+                            <input type="checkbox" id="terms" name="terms" required>
+                            <label for="terms" style="display: inline; margin-left: 8px;">I agree to the <a href="/terms-of-service" style="color: #0066cc;">Terms of Service</a></label>
+                        </div>
+
+                        <!-- Cloudflare Turnstile bot detection -->
+                        <div class="cf-turnstile" data-sitekey="0x4AAAAAACqiw6dJwHTr7ZUH" id="cfTurnstile"></div>
+
+                        <button type="submit" class="btn btn-primary" id="registerBtn" style="width: 100%; margin-bottom: 20px;">
+                            <i class="fa-solid fa-envelope"></i> Send Verification Code
+                        </button>
+                    </form>
+
+                    <div class="divider">Or</div>
+                    <div class="login-link">Already have an account? <a href="/login">Sign in</a></div>
+                    <div class="back-home"><a href="/">Back to Home</a></div>
+                </div>
+
+                <!-- STEP 2: Email verification -->
+                <div id="verifyStep">
+                    <p style="text-align:center; color:#555; margin-bottom:8px;">
+                        We sent a 6-digit code to<br>
+                        <strong id="verifyEmailDisplay" style="color:#0066cc;"></strong>
+                    </p>
+                    <p style="text-align:center; font-size:0.85em; color:#999; margin-bottom:4px;">Enter the code below to verify your email</p>
+
+                    <div class="verify-code-inputs" id="codeInputs">
+                        <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                        <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                        <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                        <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                        <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                        <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                    </div>
+
+                    <button class="btn btn-primary" id="verifyBtn" style="width:100%; margin-bottom:12px;" onclick="submitVerification()">
+                        <i class="fa-solid fa-shield-halved"></i> Verify & Create Account
+                    </button>
+
+                    <span class="resend-link" id="resendLink" onclick="resendCode()">
+                        <i class="fa-solid fa-rotate-right"></i> Resend code (<span id="resendTimer">60</span>s)
+                    </span>
+
+                    <div class="back-home" style="margin-top:16px;">
+                        <a href="#" onclick="backToForm()">&#8592; Back to form</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>Lost But Found</h3>
+                <p class="footer-description">Helping reunite people with their lost belongings through a simple and secure platform.</p>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/browse">Browse Items</a></li>
+                    <li><a href="/upload">Submit Item</a></li>
+                    <li><a href="/claim">Claim Item</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>User</h3>
+                <ul class="footer-links">
+                    <li><a href="/register">Register</a></li>
+                    <li><a href="/login">Login</a></li>
+                    <li><a href="/faq">FAQ</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Admin</h3>
+                <ul class="footer-links">
+                    <li><a href="/admin/login">Admin Login</a></li>
+                    <li><a href="/faq">Support</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-copyright">&copy; 2025 Lost But Found. All rights reserved.</div>
+            <div class="footer-legal">
+                <div class="footer-legal-text">
+                    By using this platform, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                </div>
+            </div>
+            <div class="footer-bottom-links">
+                <a href="#">Terms</a>
+                <span class="divider">|</span>
+                <a href="#">Privacy</a>
+                <span class="divider">|</span>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    // ── CONFIG ────────────────────────────────────────────────────────────────
+    // Replace these with your actual EmailJS credentials from emailjs.com
+    // and your Cloudflare Turnstile site key from dash.cloudflare.com
+    const EMAILJS_SERVICE_ID  = 'service_7u1lzfv';
+    const EMAILJS_TEMPLATE_ID = 'template_267pawk';
+    const EMAILJS_PUBLIC_KEY  = 'o9ETzT_4f0WhbDv6U';
+
+    // ── STATE ─────────────────────────────────────────────────────────────────
+    let pendingFormData = null;  // holds form values while awaiting verification
+    let serverCode      = null;  // the 6-digit code we sent
+    let resendInterval  = null;
+
+    // ── INIT EmailJS ──────────────────────────────────────────────────────────
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+    // ── PASSWORD STRENGTH ─────────────────────────────────────────────────────
+    document.getElementById('password').addEventListener('input', function() {
+        const pwd = this.value;
+        const div = document.getElementById('passwordStrength');
+        let strength = 'Weak', color = '#dc3545';
+        if (pwd.length >= 8) {
+            if (/[A-Z]/.test(pwd) && /[0-9]/.test(pwd) && /[^A-Za-z0-9]/.test(pwd)) {
+                strength = 'Strong'; color = '#28a745';
+            } else if (/[A-Z]/.test(pwd) || /[0-9]/.test(pwd)) {
+                strength = 'Medium'; color = '#ffc107';
+            }
+        }
+        div.textContent = 'Password strength: ' + strength;
+        div.style.color = color;
+        div.style.display = 'block';
+    });
+
+    // ── STEP 1: FORM SUBMIT → send verification code ──────────────────────────
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const fullName        = document.getElementById('fullName').value.trim();
+        const email           = document.getElementById('email').value.trim();
+        const studentId       = document.getElementById('studentId').value.trim();
+        const password        = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const terms           = document.getElementById('terms').checked;
+
+        // Basic validation
+        if (!fullName || !email || !password) { showError('Please fill in all required fields'); return; }
+        if (password.length < 8)              { showError('Password must be at least 8 characters'); return; }
+        if (password !== confirmPassword)      { showError('Passwords do not match'); return; }
+        if (!terms)                            { showError('Please accept the Terms of Service'); return; }
+
+        // Cloudflare Turnstile validation
+        // Skip on localhost for development
+        const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        if (!isLocalhost) {
+            const cfToken = document.querySelector('[name="cf-turnstile-response"]')?.value;
+            if (!cfToken) { showError('Please complete the bot verification'); return; }
+
+            const cfRes = await fetch('/api/verify-turnstile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: cfToken })
+            });
+            const cfData = await cfRes.json();
+            if (!cfData.success) { showError('Bot verification failed. Please try again.'); return; }
+        }
+
+        const btn = document.getElementById('registerBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending code...';
+
+        // Generate 6-digit code
+        serverCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Store form data for use after verification
+        pendingFormData = { fullName, email, studentId, password };
+
+        try {
+            // Send email via EmailJS
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                to_name:    fullName,
+                to_email:   email,
+                verify_code: serverCode,
+                app_name:   'Lost But Found'
+            });
+
+            // Show verification step
+            showVerifyStep(email);
+
+        } catch (err) {
+            console.error('EmailJS error:', err);
+            showError('Failed to send verification email. Please check your email and try again.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-envelope"></i> Send Verification Code';
+        }
+    });
+
+    // ── SHOW VERIFICATION STEP ────────────────────────────────────────────────
+    function showVerifyStep(email) {
+        document.getElementById('registerStep').style.display = 'none';
+        document.getElementById('verifyStep').style.display = 'block';
+        document.getElementById('verifyEmailDisplay').textContent = email;
+        document.getElementById('dot1').classList.remove('active');
+        document.getElementById('dot1').classList.add('done');
+        document.getElementById('dot2').classList.add('active');
+        document.getElementById('errorMessage').classList.remove('show');
+
+        // Auto-focus first digit
+        document.querySelectorAll('.code-digit')[0].focus();
+
+        // Wire up digit inputs — auto-advance and auto-backspace
+        const digits = document.querySelectorAll('.code-digit');
+        digits.forEach((inp, i) => {
+            inp.addEventListener('input', () => {
+                inp.value = inp.value.replace(/\D/g, '').slice(-1);
+                if (inp.value && i < digits.length - 1) digits[i+1].focus();
+            });
+            inp.addEventListener('keydown', e => {
+                if (e.key === 'Backspace' && !inp.value && i > 0) digits[i-1].focus();
+            });
+            inp.addEventListener('paste', e => {
+                e.preventDefault();
+                const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'');
+                paste.split('').slice(0, 6).forEach((ch, j) => { if (digits[j]) digits[j].value = ch; });
+                if (digits[Math.min(paste.length, 5)]) digits[Math.min(paste.length, 5)].focus();
+            });
+        });
+
+        // Start resend cooldown timer
+        startResendTimer();
+    }
+
+    // ── STEP 2: VERIFY CODE & CREATE ACCOUNT ──────────────────────────────────
+    async function submitVerification() {
+        const digits   = document.querySelectorAll('.code-digit');
+        const entered  = Array.from(digits).map(d => d.value).join('');
+
+        if (entered.length < 6) { showError('Please enter all 6 digits'); return; }
+
+        if (entered !== serverCode) {
+            digits.forEach(d => { d.classList.add('error'); setTimeout(() => d.classList.remove('error'), 500); });
+            showError('Incorrect code. Please try again.');
+            return;
+        }
+
+        const btn = document.getElementById('verifyBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating account...';
+
+        try {
+            const res  = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pendingFormData)
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                showSuccess('Account created! Redirecting to login...');
+                setTimeout(() => window.location.href = '/login', 2000);
+            } else {
+                showError(data.error || 'Registration failed. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Verify & Create Account';
+            }
+        } catch {
+            showError('Network error. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Verify & Create Account';
+        }
+    }
+
+    // ── RESEND CODE ───────────────────────────────────────────────────────────
+    function startResendTimer() {
+        const link  = document.getElementById('resendLink');
+        const timer = document.getElementById('resendTimer');
+        link.classList.add('disabled');
+        let secs = 60;
+        timer.textContent = secs;
+        clearInterval(resendInterval);
+        resendInterval = setInterval(() => {
+            secs--;
+            timer.textContent = secs;
+            if (secs <= 0) {
+                clearInterval(resendInterval);
+                link.classList.remove('disabled');
+                link.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Resend code';
+            }
+        }, 1000);
+    }
+
+    async function resendCode() {
+        serverCode = Math.floor(100000 + Math.random() * 900000).toString();
+        try {
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                to_name:    pendingFormData.fullName,
+                to_email:   pendingFormData.email,
+                verify_code: serverCode,
+                app_name:   'Lost But Found'
+            });
+            showError(''); 
+            showSuccess('New code sent!');
+            setTimeout(() => document.getElementById('successMessage').classList.remove('show'), 3000);
+            startResendTimer();
+            document.querySelectorAll('.code-digit').forEach(d => d.value = '');
+            document.querySelectorAll('.code-digit')[0].focus();
+        } catch {
+            showError('Failed to resend code. Please try again.');
+        }
+    }
+
+    // ── BACK TO FORM ──────────────────────────────────────────────────────────
+    function backToForm() {
+        document.getElementById('verifyStep').style.display = 'none';
+        document.getElementById('registerStep').style.display = 'block';
+        document.getElementById('dot2').classList.remove('active');
+        document.getElementById('dot1').classList.remove('done');
+        document.getElementById('dot1').classList.add('active');
+        const btn = document.getElementById('registerBtn');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-envelope"></i> Send Verification Code';
+        clearInterval(resendInterval);
+    }
+
+    // ── HELPERS ───────────────────────────────────────────────────────────────
+    function showError(msg) {
+        const el = document.getElementById('errorMessage');
+        if (!msg) { el.classList.remove('show'); return; }
+        el.textContent = msg;
+        el.classList.add('show');
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function showSuccess(msg) {
+        const el = document.getElementById('successMessage');
+        el.textContent = msg;
+        el.classList.add('show');
+    }
+    </script>
+</body>
+</html>
